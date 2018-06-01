@@ -50,15 +50,20 @@
     }
 
     function createAsteroid() {
-      var geometry = new THREE.OctahedronGeometry(Math.floor(Math.random() * 6), 1);
+      const size = 1 + Math.random() * 6;
+      var geometry = new THREE.OctahedronGeometry(size, 1);
       const material = new THREE.MeshNormalMaterial();
       const ball = new THREE.Mesh( geometry, material );
       ball.position.x = Math.random() * WIDTH;
       ball.position.y = Math.random() * HEIGHT;
       ball.alive = true;
+      ball.sz = size;
       ball.speed = {
         x: 0.1 * (Math.random() * 2 - 1),
         y: 0.1 * (Math.random() * 2 - 1),
+        rz: 0.01 * (Math.random() * 2 - 1),
+        rx: 0.01 * (Math.random() * 2 - 1),
+        ry: 0.01 * (Math.random() * 2 - 1),
       };
       scene.add( ball );
       asteroids.push(ball);
@@ -84,29 +89,31 @@
     for (var i = 0; i<10; i++)
       createAsteroid();
 
+    const keys = {};
+
     animate();
 
-    document.onkeydown = (event) => {
-      switch(event.key) {
-        case "ArrowUp":
-          ship.speed.x = ship.speed.x - Math.sin(ship.rotation.z) * 0.1;
-          ship.speed.y = ship.speed.y + Math.cos(ship.rotation.z) * 0.1;
-          break;
-        case " ":
-          fire();
-          break;
-        case "ArrowLeft":
-          ship.rotation.z += 0.3;
-          break;
-        case "ArrowRight":
-          ship.rotation.z -= 0.3;
-          break;
-      }
-    }
+    document.onkeydown = event => keys[event.key] = 1;
+    document.onkeyup = event => keys[event.key] = 0;
 
     function animate() {
       requestAnimationFrame( animate );
       const t = new Date().getTime();
+
+      if (keys.ArrowUp) {
+        ship.speed.x = ship.speed.x - Math.sin(ship.rotation.z) * 0.01;
+        ship.speed.y = ship.speed.y + Math.cos(ship.rotation.z) * 0.01;
+      }
+      if (keys[' ']) {
+        fire();
+        keys[' '] = 0;
+      }
+      if (keys.ArrowLeft) {
+        ship.rotation.z += 0.1;
+      }
+      if (keys.ArrowRight) {
+        ship.rotation.z -= 0.1;
+      }
 
       ship.position.x = (WIDTH + ship.position.x + ship.speed.x) % WIDTH;
       ship.position.y = (HEIGHT + ship.position.y + ship.speed.y) % HEIGHT;
@@ -131,8 +138,23 @@
           // } else {
             asteroid.position.x = (WIDTH + asteroid.position.x + asteroid.speed.x) % WIDTH;
             asteroid.position.y = (HEIGHT + asteroid.position.y + asteroid.speed.y) % HEIGHT;
+            asteroid.rotation.z = asteroid.rotation.z + asteroid.speed.rz;
+            asteroid.rotation.x = asteroid.rotation.x + asteroid.speed.rx;
+            asteroid.rotation.y = asteroid.rotation.y + asteroid.speed.ry;
           //}
         }
+      });
+
+      fireballs.map(ball => {
+        asteroids.map(asteroid => {
+          // console.log();
+          if(Math.sqrt((ball.position.x-asteroid.position.x)*(ball.position.x-asteroid.position.x) + (ball.position.y-asteroid.position.y)*(ball.position.y-asteroid.position.y)) <= asteroid.sz) {
+            asteroid.alive = false;
+            asteroid.position.x = -9999;
+            ball.alive = false;
+            ball.position.x = -9999;
+          }
+        })
       })
 
       renderer.render( scene, camera );
