@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Asteroids</title>
+  <style type="text/css">
+    body {
+      height: 100vh;
+      margin: 0;
+      display: flex;
+    }
+  </style>
+  <script src="./three.min.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 );
+    camera.position.z = 100;
+    camera.position.x = 50;
+    camera.position.y = 50;
+
+    const scene = new THREE.Scene();
+
+    const ship = createShip();
+    ship.position.x = 50;
+    ship.position.y = 50;
+    ship.speed = {x: 0, y: 0};
+    scene.add( ship );
+
+    function createShip() {
+      var geometry = new THREE.ConeGeometry(1, 3, 4);
+      const material = new THREE.MeshNormalMaterial();
+
+      return new THREE.Mesh( geometry, material );
+    }
+
+    const fireballs = [];
+    function createFireball() {
+      var geometry = new THREE.SphereGeometry(0.5, 4, 4);
+      const material = new THREE.MeshNormalMaterial();
+      const ball = new THREE.Mesh( geometry, material );
+      ball.position.x = -9999;
+      ball.alive = false;
+      scene.add( ball );
+      fireballs.push(ball);
+      return ball;
+    }
+
+    function fire() {
+      const fireball = fireballs.find(a => !a.alive) || createFireball();
+      fireball.speed = {
+        x: -1 * Math.sin(ship.rotation.z) + ship.speed.x,
+        y: Math.cos(ship.rotation.z) + ship.speed.y,
+      };
+      fireball.position.x = ship.position.x;
+      fireball.position.y = ship.position.y;
+      fireball.alive = true;
+      fireball.lifetime = new Date().getTime() + 1000;
+    }
+
+    const renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    animate();
+
+    document.onkeydown = (event) => {
+      switch(event.key) {
+        case "ArrowUp":
+          ship.speed.x = ship.speed.x - Math.sin(ship.rotation.z) * 0.1;
+          ship.speed.y = ship.speed.y + Math.cos(ship.rotation.z) * 0.1;
+          break;
+        case " ":
+          fire();
+          break;
+        case "ArrowLeft":
+          ship.rotation.z += 0.3;
+          break;
+        case "ArrowRight":
+          ship.rotation.z -= 0.3;
+          break;
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame( animate );
+      const t = new Date().getTime();
+
+      ship.position.x = (100 + ship.position.x + ship.speed.x) % 100;
+      ship.position.y = (100 + ship.position.y + ship.speed.y) % 100;
+
+      fireballs.map(ball => {
+        if (ball.alive) {
+          if (ball.lifetime < t) {
+            ball.alive = false;
+            ball.position.x = -9999; // -9999;
+          } else {
+            ball.position.x = (100 + ball.position.x + ball.speed.x) % 100;
+            ball.position.y = (100 + ball.position.y + ball.speed.y) % 100;
+          }
+        }
+      });
+
+      renderer.render( scene, camera );
+    }
+  </script>
+</body>
+</html>
