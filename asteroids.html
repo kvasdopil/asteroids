@@ -13,16 +13,19 @@
 </head>
 <body>
   <script type="text/javascript">
+    const HEIGHT = 150;
+    const WIDTH = HEIGHT * (window.innerWidth / window.innerHeight)
+
     const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 );
     camera.position.z = 100;
-    camera.position.x = 50;
-    camera.position.y = 50;
+    camera.position.x = WIDTH / 2;
+    camera.position.y = HEIGHT / 2;
 
     const scene = new THREE.Scene();
 
     const ship = createShip();
-    ship.position.x = 50;
-    ship.position.y = 50;
+    ship.position.x = WIDTH / 2;
+    ship.position.y = HEIGHT / 2;
     ship.speed = {x: 0, y: 0};
     scene.add( ship );
 
@@ -85,8 +88,8 @@
       requestAnimationFrame( animate );
       const t = new Date().getTime();
 
-      ship.position.x = (100 + ship.position.x + ship.speed.x) % 100;
-      ship.position.y = (100 + ship.position.y + ship.speed.y) % 100;
+      ship.position.x = (WIDTH + ship.position.x + ship.speed.x) % WIDTH;
+      ship.position.y = (HEIGHT + ship.position.y + ship.speed.y) % HEIGHT;
 
       fireballs.map(ball => {
         if (ball.alive) {
@@ -94,8 +97,8 @@
             ball.alive = false;
             ball.position.x = -9999; // -9999;
           } else {
-            ball.position.x = (100 + ball.position.x + ball.speed.x) % 100;
-            ball.position.y = (100 + ball.position.y + ball.speed.y) % 100;
+            ball.position.x = (WIDTH + ball.position.x + ball.speed.x) % WIDTH;
+            ball.position.y = (HEIGHT + ball.position.y + ball.speed.y) % HEIGHT;
           }
         }
       });
