@@ -37,6 +37,7 @@
     }
 
     const fireballs = [];
+    const asteroids = [];
     function createFireball() {
       var geometry = new THREE.SphereGeometry(0.5, 4, 4);
       const material = new THREE.MeshNormalMaterial();
@@ -45,6 +46,22 @@
       ball.alive = false;
       scene.add( ball );
       fireballs.push(ball);
+      return ball;
+    }
+
+    function createAsteroid() {
+      var geometry = new THREE.OctahedronGeometry(Math.floor(Math.random() * 6), 1);
+      const material = new THREE.MeshNormalMaterial();
+      const ball = new THREE.Mesh( geometry, material );
+      ball.position.x = Math.random() * WIDTH;
+      ball.position.y = Math.random() * HEIGHT;
+      ball.alive = true;
+      ball.speed = {
+        x: 0.1 * (Math.random() * 2 - 1),
+        y: 0.1 * (Math.random() * 2 - 1),
+      };
+      scene.add( ball );
+      asteroids.push(ball);
       return ball;
     }
 
@@ -63,6 +80,9 @@
     const renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
+
+    for (var i = 0; i<10; i++)
+      createAsteroid();
 
     animate();
 
@@ -102,6 +122,18 @@
           }
         }
       });
+
+      asteroids.map(asteroid => {
+        if (asteroid.alive) {
+          // if (ball.lifetime < t) {
+          //   ball.alive = false;
+          //   ball.position.x = -9999; // -9999;
+          // } else {
+            asteroid.position.x = (WIDTH + asteroid.position.x + asteroid.speed.x) % WIDTH;
+            asteroid.position.y = (HEIGHT + asteroid.position.y + asteroid.speed.y) % HEIGHT;
+          //}
+        }
+      })
 
       renderer.render( scene, camera );
     }
