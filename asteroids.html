@@ -51,8 +51,7 @@
       return ball;
     }
 
-    function createAsteroid(sz) {
-      const size = sz || 1 + Math.random() * 6;
+    function createAsteroid(size) {
       var geometry = new THREE.OctahedronGeometry(size, 1);
       const material = new THREE.MeshNormalMaterial();
       const ball = new THREE.Mesh( geometry, material );
@@ -62,9 +61,9 @@
       ball.speed = {
         x: 0.1 * (Math.random() * 2 - 1),
         y: 0.1 * (Math.random() * 2 - 1),
-        rz: 0.01 * (Math.random() * 2 - 1),
-        rx: 0.01 * (Math.random() * 2 - 1),
-        ry: 0.01 * (Math.random() * 2 - 1),
+        rz: (0.1 / size) * (Math.random() * 2 - 1),
+        rx: (0.1 / size) * (Math.random() * 2 - 1),
+        ry: (0.1 / size) * (Math.random() * 2 - 1),
       };
       scene.add( ball );
       asteroids.push(ball);
@@ -91,26 +90,19 @@
       a3.position.y = asteroid.position.y;
 
       // TODO: randomize this
-      a1.position.add(new THREE.Vector3(asteroid.sz - 2 , 0, 0));
-      a2.position.sub(new THREE.Vector3(asteroid.sz - 2, 0, 0));
-      a3.position.sub(new THREE.Vector3(asteroid.sz - 2, asteroid.sz - 2, 0));
+      a1.position.add(new THREE.Vector3(asteroid.sz / 1.2, -1 * asteroid.sz / 1.2, 0));
+      a2.position.sub(new THREE.Vector3(-1 * asteroid.sz / 1.2, asteroid.sz / 1.2, 0));
+      a3.position.sub(new THREE.Vector3(asteroid.sz / 1.5, asteroid.sz / 1.5, 0));
 
       a1.speed = {...asteroid.speed};
-      a1.speed.x += 0.05 * (Math.random() * 2 - 1);
-      a1.speed.y += 0.05 * (Math.random() * 2 - 1);
+      a1.speed.x += (1/asteroid.sz) * Math.random();
 
       a2.speed = {...asteroid.speed};
-      a2.speed.x += 0.05 * (Math.random() * 2 - 1);
-      a2.speed.y += 0.05 * (Math.random() * 2 - 1);
+      a2.speed.x -= (1/asteroid.sz) * Math.random();
 
       a3.speed = {...asteroid.speed};
-      a3.speed.x += 0.05 * (Math.random() * 2 - 1);
-      a3.speed.y += 0.05 * (Math.random() * 2 - 1);
-
-      //a2.position = asteroid.position.clone();
-      //a2.speed = {...asteroid.speed};
-      //a2.speed.x += 0.03 * (Math.random() * 2 - 1);
-      //a2.speed.y += 0.03 * (Math.random() * 2 - 1);
+      a3.speed.x -= (1/asteroid.sz) * Math.random();
+      a3.speed.y -= (1/asteroid.sz) * Math.random();
     }
 
     function fire() {
@@ -130,20 +122,31 @@
     document.body.appendChild( renderer.domElement );
 
     for (var i = 0; i<10; i++)
-      createAsteroid();
+      createAsteroid(Math.random() * 8 + 1);
 
     const keys = {};
-
-    animate();
 
     document.onkeydown = event => keys[event.key] = 1;
     document.onkeyup = event => keys[event.key] = 0;
 
-    function calcPhysics() {
-
+    function collideAsteroids(a1, a2) {
+      const v1 = a1.position.clone().sub(a2.position);
+      const m1m2 = a1.sz / a2.sz;
+      const m2m1 = a2.sz / a1.sz;
+      x1 = a2.speed.x;
+      y2 = a2.speed.y;
+      a2.speed.x = a1.speed.x * m1m2; // - v1.x * 0.003;
+      a2.speed.y = a1.speed.y * m1m2; // - v1.y * 0.003;
+      a1.speed.x = x1 * m2m1; // + v1.x * 0.003;
+      a1.speed.y = y2 * m2m1; // + v1.y * 0.003;
     }
 
+    let gameOver = false;
+
     function animate() {
+      if(gameOver) {
+        return;
+      }
       requestAnimationFrame( animate );
       const t = new Date().getTime();
 
@@ -200,10 +203,26 @@
             }
           }
         })
+      });
+
+      const aa = asteroids.filter(a => a.visible);
+
+      aa.map(oid => {
+        if(oid.position.distanceTo(ship.position) <= oid.sz) {
+          gameOver = true;
+        }
       })
 
+      for(let i = 0; i<aa.length; i++)
+        for(let j=0; j<i; j++) {
+          if(aa[i].position.distanceTo(aa[j].position) <= (aa[i].sz + aa[j].sz)) {
+            collideAsteroids(aa[i], aa[j]);
+          }
+        }
       renderer.render( scene, camera );
     }
+
+    animate();
   </script>
 </body>
 </html>
