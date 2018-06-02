@@ -26,14 +26,17 @@
     const ship = createShip();
     ship.position.x = WIDTH / 2;
     ship.position.y = HEIGHT / 2;
-    ship.speed = {x: 0, y: 0};
-    scene.add( ship );
 
     function createShip() {
       var geometry = new THREE.ConeGeometry(1, 3, 4);
       const material = new THREE.MeshNormalMaterial();
 
-      return new THREE.Mesh( geometry, material );
+      const ship = new THREE.Mesh( geometry, material );
+
+      scene.add( ship );
+      ship.speed = {x: 0, y: 0};
+
+      return ship;
     }
 
     const fireballs = [];
@@ -42,21 +45,19 @@
       var geometry = new THREE.SphereGeometry(0.5, 4, 4);
       const material = new THREE.MeshNormalMaterial();
       const ball = new THREE.Mesh( geometry, material );
-      ball.position.x = -9999;
-      ball.alive = false;
+      ball.visible = false;
       scene.add( ball );
       fireballs.push(ball);
       return ball;
     }
 
-    function createAsteroid() {
-      const size = 1 + Math.random() * 6;
+    function createAsteroid(sz) {
+      const size = sz || 1 + Math.random() * 6;
       var geometry = new THREE.OctahedronGeometry(size, 1);
       const material = new THREE.MeshNormalMaterial();
       const ball = new THREE.Mesh( geometry, material );
       ball.position.x = Math.random() * WIDTH;
       ball.position.y = Math.random() * HEIGHT;
-      ball.alive = true;
       ball.sz = size;
       ball.speed = {
         x: 0.1 * (Math.random() * 2 - 1),
@@ -70,15 +71,57 @@
       return ball;
     }
 
+    function crackAsteroid(asteroid) {
+      asteroid.visible = false;
+      if(asteroid.sz < 4) {
+        return;
+      }
+
+      const a1 = createAsteroid(asteroid.sz - 2);
+      const a2 = createAsteroid(asteroid.sz - 2);
+      const a3 = createAsteroid(asteroid.sz - 2);
+
+      a1.position.x = asteroid.position.x; //TODO: shift a bit
+      a1.position.y = asteroid.position.y;
+
+      a2.position.x = asteroid.position.x; //TODO: shift a bit
+      a2.position.y = asteroid.position.y;
+
+      a3.position.x = asteroid.position.x; //TODO: shift a bit
+      a3.position.y = asteroid.position.y;
+
+      // TODO: randomize this
+      a1.position.add(new THREE.Vector3(asteroid.sz - 2 , 0, 0));
+      a2.position.sub(new THREE.Vector3(asteroid.sz - 2, 0, 0));
+      a3.position.sub(new THREE.Vector3(asteroid.sz - 2, asteroid.sz - 2, 0));
+
+      a1.speed = {...asteroid.speed};
+      a1.speed.x += 0.05 * (Math.random() * 2 - 1);
+      a1.speed.y += 0.05 * (Math.random() * 2 - 1);
+
+      a2.speed = {...asteroid.speed};
+      a2.speed.x += 0.05 * (Math.random() * 2 - 1);
+      a2.speed.y += 0.05 * (Math.random() * 2 - 1);
+
+      a3.speed = {...asteroid.speed};
+      a3.speed.x += 0.05 * (Math.random() * 2 - 1);
+      a3.speed.y += 0.05 * (Math.random() * 2 - 1);
+
+      //a2.position = asteroid.position.clone();
+      //a2.speed = {...asteroid.speed};
+      //a2.speed.x += 0.03 * (Math.random() * 2 - 1);
+      //a2.speed.y += 0.03 * (Math.random() * 2 - 1);
+    }
+
     function fire() {
-      const fireball = fireballs.find(a => !a.alive) || createFireball();
+      const fireball = fireballs.find(a => !a.visible) || createFireball();
       fireball.speed = {
         x: -1 * Math.sin(ship.rotation.z) + ship.speed.x,
         y: Math.cos(ship.rotation.z) + ship.speed.y,
       };
       fireball.position.x = ship.position.x;
       fireball.position.y = ship.position.y;
-      fireball.alive = true;
+      fireball.visible = true;
       fireball.lifetime = new Date().getTime() + 1000;
     }
 
@@ -95,6 +138,10 @@
 
     document.onkeydown = event => keys[event.key] = 1;
     document.onkeyup = event => keys[event.key] = 0;
+
+    function calcPhysics() {
+
+    }
 
     function animate() {
       requestAnimationFrame( animate );
@@ -119,10 +166,9 @@
       ship.position.y = (HEIGHT + ship.position.y + ship.speed.y) % HEIGHT;
 
       fireballs.map(ball => {
-        if (ball.alive) {
+        if (ball.visible) {
           if (ball.lifetime < t) {
-            ball.alive = false;
-            ball.position.x = -9999; // -9999;
+            ball.visible = false;
           } else {
             ball.position.x = (WIDTH + ball.position.x + ball.speed.x) % WIDTH;
             ball.position.y = (HEIGHT + ball.position.y + ball.speed.y) % HEIGHT;
@@ -131,9 +177,9 @@
       });
 
       asteroids.map(asteroid => {
-        if (asteroid.alive) {
+        if (asteroid.visible) {
           // if (ball.lifetime < t) {
-          //   ball.alive = false;
+          //   ball.visible = false;
           //   ball.position.x = -9999; // -9999;
           // } else {
             asteroid.position.x = (WIDTH + asteroid.position.x + asteroid.speed.x) % WIDTH;
@@ -147,12 +193,11 @@
 
       fireballs.map(ball => {
         asteroids.map(asteroid => {
-          // console.log();
-          if(Math.sqrt((ball.position.x-asteroid.position.x)*(ball.position.x-asteroid.position.x) + (ball.position.y-asteroid.position.y)*(ball.position.y-asteroid.position.y)) <= asteroid.sz) {
-            asteroid.alive = false;
-            asteroid.position.x = -9999;
-            ball.alive = false;
-            ball.position.x = -9999;
+          if(ball.visible && asteroid.visible) {
+            if(ball.position.distanceTo(asteroid.position) <= asteroid.sz) {
+              ball.visible = false;
+              crackAsteroid(asteroid);
+            }
           }
         })
       })
