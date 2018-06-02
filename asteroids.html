@@ -10,9 +10,18 @@
     }
   </style>
   <script src="./three.min.js"></script>
+  <script src="./physi.js"></script>
 </head>
 <body>
   <script type="text/javascript">
+
+    Physijs.scripts.worker = './physijs_worker.js';
+    Physijs.scripts.ammo = './ammo.js';
+
+    const renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
     const HEIGHT = 150;
     const WIDTH = HEIGHT * (window.innerWidth / window.innerHeight)
 
@@ -116,10 +125,6 @@
       fireball.visible = true;
       fireball.lifetime = new Date().getTime() + 1000;
     }
-
-    const renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
 
     for (var i = 0; i<10; i++)
       createAsteroid(Math.random() * 8 + 1);
