@@ -68,21 +68,43 @@
     exhaust.emitter = ship;
     // exhaust.start();
 
+    var oidMaterial = new BABYLON.StandardMaterial("asteroid material", scene);
+    oidMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1);
+    oidMaterial.wireframe = true;
+
     var physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(new BABYLON.Vector3(0, 0, 0));
 
     // ship.enablePhysics();
     ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.8 }, scene);
 
+    const wrapped = [
+      ship
+    ];
+
     for(i=0;i<10;i++) {
       const diameter = Math.random() * 8 + 1;
-      const oid = BABYLON.MeshBuilder.CreateSphere(`oid${i}`, { diameter }, scene);
+      const oid = BABYLON.MeshBuilder.CreateSphere(`oid${i}`, { diameter, segments: 2 }, scene);
       oid.position = new BABYLON.Vector3(
         Math.random() * 80 - 40,
         Math.random() * 80 - 40,
         0
       );
       oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.8 }, scene);
+      const force = new BABYLON.Vector3(
+        100 * (Math.random() * 2 - 1),
+        100 * (Math.random() * 2 - 1),
+        0,
+      );
+      oid.physicsImpostor.applyImpulse(force, oid.getAbsolutePosition());
+      oid.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(
+        1 * (Math.random() * 2 - 1),
+        1 * (Math.random() * 2 - 1),
+        1 * (Math.random() * 2 - 1),
+        0
+      ));
+      oid.material = oidMaterial;
+      wrapped.push(oid);
     }
 
     window.addEventListener("resize", () => engine.resize());
@@ -125,6 +147,24 @@
         );
         ship.physicsImpostor.applyImpulse(force, ship.getAbsolutePosition());
       }
+
+      wrapped.map(obj => {
+        if(obj.position.x > 50) {
+          obj.position.x -= 100;
+        }
+
+        if(obj.position.x < -50) {
+          obj.position.x += 100;
+        }
+
+        if(obj.position.y > 50) {
+          obj.position.y -= 100;
+        }
+
+        if(obj.position.y < -50) {
+          obj.position.y += 100;
+        }
+      })
     });
 
     engine.runRenderLoop(() => scene.render());
