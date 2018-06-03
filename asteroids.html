@@ -73,6 +73,9 @@
     oidMaterial.diffuseColor = new BABYLON.Color3(.5, .5, .5);
     oidMaterial.wireframe = true;
 
+    var ballMaterial = new BABYLON.StandardMaterial("ball material", scene);
+    ballMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+
     var physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(new BABYLON.Vector3(0, 0, 0));
 
@@ -107,6 +110,26 @@
       oid.material = oidMaterial;
 
       return oid;
+    }
+
+    function createBall() {
+      const ball = BABYLON.MeshBuilder.CreateSphere(`ball`, { diameter: 0.5, segments: 2 }, scene);
+      ball.material = ballMaterial;
+      const q = ship.rotationQuaternion.toEulerAngles();
+
+      ball.position = ship.position.clone();
+      ball.position.x += 2 * Math.sin(q.z) * -1;
+      ball.position.y += 2 * Math.cos(q.z);
+
+      ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+
+      const force = new BABYLON.Vector3(
+        50 * Math.sin(q.z) * -1,
+        50 * Math.cos(q.z),
+        0,
+      ).add(ship.physicsImpostor.getLinearVelocity()); // .add(ship.velocity);
+
+      ball.physicsImpostor.applyImpulse(force, ball.getAbsolutePosition());
     }
 
     for(i=0;i<10;i++) {
@@ -153,6 +176,11 @@
           0,
         );
         ship.physicsImpostor.applyImpulse(force, ship.getAbsolutePosition());
+      }
+
+      if (keys[' ']) {
+        keys[' '] = 0;
+        createBall();
       }
 
       wrapped.map(obj => {
