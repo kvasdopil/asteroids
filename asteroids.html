@@ -6,15 +6,94 @@
     body {
       height: 100vh;
       margin: 0;
-      display: flex;
+    }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
     }
   </style>
-  <script src="./three.min.js"></script>
-  <script src="./physi.js"></script>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
 </head>
 <body>
+  <canvas id="renderCanvas" touch-action="none"></canvas>
   <script type="text/javascript">
+    var canvas = document.getElementById("renderCanvas"); // Get the canvas element
+    var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
+    function createScene() {
+      const scene = new BABYLON.Scene(engine);
+
+      const camera = new BABYLON.UniversalCamera("Camera", new BABYLON.Vector3(0, 0, -100), scene);
+      camera.setTarget(BABYLON.Vector3.Zero());
+      // camera.attachControl(canvas, true);
+
+      const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+      const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+
+      scene.workerCollisions = true;
+
+      return scene;
+    };
+
+    const scene = createScene(); //Call the createScene function
+    // var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter:2}, scene);
+    const ship = BABYLON.MeshBuilder.CreateCylinder("ship", {diameterTop: 0, diameterBottom: 1, tesselation: 4, height: 2}, scene);
+    ship.position = new BABYLON.Vector3(0, 0, 0);
+
+    function createExhaust() {
+      const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, scene);
+      exhaust.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      exhaust.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
+      exhaust.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
+      exhaust.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      exhaust.minSize = 0.1;
+      exhaust.maxSize = 0.5;
+      exhaust.minLifeTime = 0;
+      exhaust.maxLifeTime = 0.5;
+      exhaust.emitRate = 1000;
+      exhaust.createConeEmitter(0.1, Math.PI / 6);
+      exhaust.minEmitPower = 20;
+      exhaust.maxEmitPower = 50;
+      exhaust.updateSpeed = 0.005;
+
+      return exhaust;
+    }
+
+    const exhaust = createExhaust();
+
+    exhaust.emitter = ship;
+    // exhaust.start();
+
+    var physicsPlugin = new BABYLON.CannonJSPlugin();
+    scene.enablePhysics();
+
+
+    window.addEventListener("resize", () => engine.resize());
+    const keys = {};
+
+    document.onkeydown = event => keys[event.key] = 1;
+    document.onkeyup = event => keys[event.key] = 0;
+
+    scene.registerBeforeRender(() => {
+      if (keys.ArrowLeft) {
+        ship.rotation.z += 0.1;
+      }
+      if (keys.ArrowRight) {
+        ship.rotation.z -= 0.1;
+      }
+      if (keys.ArrowUp) {
+        exhaust.start();
+      } else {
+        exhaust.stop();
+      }
+    });
+
+    engine.runRenderLoop(() => scene.render());
+/*
     Physijs.scripts.worker = './physijs_worker.js';
     Physijs.scripts.ammo = './ammo.js';
 
@@ -227,7 +306,7 @@
       renderer.render( scene, camera );
     }
 
-    animate();
+    animate();*/
   </script>
 </body>
 </html>
