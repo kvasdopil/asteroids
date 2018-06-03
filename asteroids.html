@@ -6,6 +6,7 @@
     body {
       height: 100vh;
       margin: 0;
+      overflow: hidden;
     }
     #renderCanvas {
       width: 100%;
@@ -40,9 +41,7 @@
     };
 
     const scene = createScene(); //Call the createScene function
-    // var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter:2}, scene);
     const ship = BABYLON.MeshBuilder.CreateCylinder("ship", {diameterTop: 0, diameterBottom: 1, tesselation: 4, height: 2}, scene);
-    ship.position = new BABYLON.Vector3(0, 0, 0);
 
     function createExhaust() {
       const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, scene);
@@ -55,9 +54,12 @@
       exhaust.minLifeTime = 0;
       exhaust.maxLifeTime = 0.5;
       exhaust.emitRate = 1000;
-      exhaust.createConeEmitter(0.1, Math.PI / 6);
-      exhaust.minEmitPower = 20;
-      exhaust.maxEmitPower = 50;
+      exhaust.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      exhaust.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      exhaust.direction1 = new BABYLON.Vector3(-1, 5, 0).normalize();
+      exhaust.direction2 = new BABYLON.Vector3(1, 5, 0).normalize();
+      exhaust.minEmitPower = -20;
+      exhaust.maxEmitPower = -50;
       exhaust.updateSpeed = 0.005;
 
       return exhaust;
@@ -66,31 +68,30 @@
     const exhaust = createExhaust();
 
     exhaust.emitter = ship;
-    // exhaust.start();
 
     var oidMaterial = new BABYLON.StandardMaterial("asteroid material", scene);
-    oidMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1);
+    oidMaterial.diffuseColor = new BABYLON.Color3(.5, .5, .5);
     oidMaterial.wireframe = true;
 
     var physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(new BABYLON.Vector3(0, 0, 0));
 
     // ship.enablePhysics();
-    ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.8 }, scene);
+    ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
     const wrapped = [
       ship
     ];
 
-    for(i=0;i<10;i++) {
-      const diameter = Math.random() * 8 + 1;
-      const oid = BABYLON.MeshBuilder.CreateSphere(`oid${i}`, { diameter, segments: 2 }, scene);
+
+    function createAsteroid(diameter) {
+      const oid = BABYLON.MeshBuilder.CreateSphere(`oid`, { diameter, segments: 2 }, scene);
       oid.position = new BABYLON.Vector3(
         Math.random() * 80 - 40,
         Math.random() * 80 - 40,
         0
       );
-      oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.8 }, scene);
+      oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.1 }, scene);
       const force = new BABYLON.Vector3(
         100 * (Math.random() * 2 - 1),
         100 * (Math.random() * 2 - 1),
@@ -104,6 +105,12 @@
         0
       ));
       oid.material = oidMaterial;
+
+      return oid;
+    }
+
+    for(i=0;i<10;i++) {
+      const oid = createAsteroid(Math.random() * 8 + 1);
       wrapped.push(oid);
     }
 
@@ -141,8 +148,8 @@
       if (keys.ArrowUp) {
         const q = ship.rotationQuaternion.toEulerAngles();
         const force = new BABYLON.Vector3(
-          Math.sin(q.z) * -0.2,
-          Math.cos(q.z) * 0.2,
+          0.5 * Math.sin(q.z) * -1,
+          0.5 * Math.cos(q.z),
           0,
         );
         ship.physicsImpostor.applyImpulse(force, ship.getAbsolutePosition());
@@ -164,6 +171,8 @@
         if(obj.position.y < -50) {
           obj.position.y += 100;
         }
+
+        obj.position.z = 0;
       })
     });
 
