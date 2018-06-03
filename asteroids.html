@@ -13,7 +13,7 @@
       touch-action: none;
     }
   </style>
-
+    <script src="./cannon.min.js"></script>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
@@ -69,26 +69,61 @@
     // exhaust.start();
 
     var physicsPlugin = new BABYLON.CannonJSPlugin();
-    scene.enablePhysics();
+    scene.enablePhysics(new BABYLON.Vector3(0, 0, 0));
 
+    // ship.enablePhysics();
+    ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.8 }, scene);
+
+    for(i=0;i<10;i++) {
+      const diameter = Math.random() * 8 + 1;
+      const oid = BABYLON.MeshBuilder.CreateSphere(`oid${i}`, { diameter }, scene);
+      oid.position = new BABYLON.Vector3(
+        Math.random() * 80 - 40,
+        Math.random() * 80 - 40,
+        0
+      );
+      oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.8 }, scene);
+    }
 
     window.addEventListener("resize", () => engine.resize());
     const keys = {};
 
-    document.onkeydown = event => keys[event.key] = 1;
-    document.onkeyup = event => keys[event.key] = 0;
+    const firing = false;
+
+    document.onkeydown = ({key}) => {
+      keys[key] = 1;
+
+      if (key === 'ArrowLeft')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,5,0));
+
+      if (key === 'ArrowRight')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,-5,0));
+
+      if (key === 'ArrowUp')
+        exhaust.start();
+    }
+    document.onkeyup = ({key}) => {
+      keys[key] = 0;
+
+      if (key === 'ArrowLeft')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,0,0));
+
+      if (key === 'ArrowRight')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,0,0));
+
+      if (key === 'ArrowUp')
+        exhaust.stop();
+    }
 
     scene.registerBeforeRender(() => {
-      if (keys.ArrowLeft) {
-        ship.rotation.z += 0.1;
-      }
-      if (keys.ArrowRight) {
-        ship.rotation.z -= 0.1;
-      }
       if (keys.ArrowUp) {
-        exhaust.start();
-      } else {
-        exhaust.stop();
+        const q = ship.rotationQuaternion.toEulerAngles();
+        const force = new BABYLON.Vector3(
+          Math.sin(q.z) * -0.2,
+          Math.cos(q.z) * 0.2,
+          0,
+        );
+        ship.physicsImpostor.applyImpulse(force, ship.getAbsolutePosition());
       }
     });
 
