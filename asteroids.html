@@ -133,13 +133,56 @@
 
       ball.physicsImpostor.applyImpulse(force, ball.getAbsolutePosition());
 
+      ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
+        console.log('collided', other.object);
+        me.object.ttl = 0;
+        other.object.physicsImpostor = null;
+        scene.removeMesh(other.object);
+        // TODO: properly remove an object from scene (inc. physics)
+      });
+
       ball.ttl = new Date().getTime() + 1000;
       balls.push(ball);
     }
 
+    let gameOver = false;
+
     for(i=0;i<10;i++) {
       const oid = createAsteroid(Math.random() * 8 + 1);
       wrapped.push(oid);
+    }
+    ship.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
+      gameOver = true;
+      scene.removeMesh(ship);
+      exhaust.stop();
+
+      const explosion = createExplosion();
+    });
+
+    function createExplosion() {
+      const explosion = new BABYLON.ParticleSystem("exhaust", 2000, scene);
+      explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      explosion.color1 = new BABYLON.Color4(1, 0.8, 1.0, 1.0);
+      explosion.color2 = new BABYLON.Color4(1, 0.5, 1.0, 1.0);
+      explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      explosion.minSize = 0.4;
+      explosion.maxSize = 1.3;
+      explosion.minLifeTime = 0;
+      explosion.maxLifeTime = 0.5;
+      explosion.emitRate = 1000;
+      //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      explosion.direction1 = new BABYLON.Vector3(-5, -5, -5);
+      explosion.direction2 = new BABYLON.Vector3(5, 5, 5);
+      explosion.minAngularSpeed = -2;
+      explosion.maxAngularSpeed = 2;
+      explosion.minEmitPower = 0.5;
+      explosion.maxEmitPower = 4;
+      explosion.updateSpeed = 0.005;
+
+      explosion.emitter = ship.position.clone();
+      explosion.targetStopDuration = .3;
+      explosion.start();
     }
 
     window.addEventListener("resize", () => engine.resize());
@@ -148,6 +191,9 @@
     const firing = false;
 
     document.onkeydown = ({key}) => {
+      if(gameOver) {
+        return;
+      }
       keys[key] = 1;
 
       if (key === 'ArrowLeft')
@@ -160,6 +206,9 @@
         exhaust.start();
     }
     document.onkeyup = ({key}) => {
+      if(gameOver) {
+        return;
+      }
       keys[key] = 0;
 
       if (key === 'ArrowLeft')
@@ -212,6 +261,7 @@
 
       balls.filter(ball => ball.ttl <= now).map(ball => {
         console.log('ball ttl done');
+        ball.physicsImpostor = null;
         scene.removeMesh(ball)
       });
       balls = balls.filter(ball => ball.ttl > now);
