@@ -25,12 +25,26 @@
     var canvas = document.getElementById("renderCanvas"); // Get the canvas element
     var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
+    let MAX_Y = 100;
+    let MAX_X = 100;
+    let fov = 0;
+
     function createScene() {
       const scene = new BABYLON.Scene(engine);
 
       const camera = new BABYLON.UniversalCamera("Camera", new BABYLON.Vector3(0, 0, -100), scene);
       camera.setTarget(BABYLON.Vector3.Zero());
+
+      fov = camera.fov;
+      MAX_Y = Math.sin(camera.fov / 2) * 109 * 2;
+      MAX_X = MAX_Y * (window.innerWidth / window.innerHeight);
+
+      // console.log(MAX_Y, MAX_X)
       // camera.attachControl(canvas, true);
+
+      // const box = BABYLON.MeshBuilder.CreateBox("ship", {size: 1}, scene);
+      // box.scaling.x = MAX_X;
+      // box.scaling.y = MAX_Y;
 
       const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
       const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
@@ -341,7 +355,11 @@
       explosion.start();
     }
 
-    window.addEventListener("resize", () => engine.resize());
+    window.addEventListener("resize", () => {
+      engine.resize();
+      MAX_Y = Math.sin(fov / 2) * 109 * 2;
+      MAX_X = MAX_Y * (window.innerWidth / window.innerHeight);
+    });
     const keys = {};
 
     const firing = false;
@@ -396,20 +414,20 @@
       }
 
       wrapped.map(obj => {
-        if(obj.position.x > 50) {
-          obj.position.x -= 100;
+        if(obj.position.x > MAX_X / 2) {
+          obj.position.x -= MAX_X;
         }
 
-        if(obj.position.x < -50) {
-          obj.position.x += 100;
+        if(obj.position.x < -MAX_X / 2) {
+          obj.position.x += MAX_X;
         }
 
-        if(obj.position.y > 40) {
-          obj.position.y -= 80;
+        if(obj.position.y > MAX_Y / 2) {
+          obj.position.y -= MAX_Y;
         }
 
-        if(obj.position.y < -40) {
-          obj.position.y += 80;
+        if(obj.position.y < -MAX_Y / 2) {
+          obj.position.y += MAX_Y;
         }
 
         obj.position.z = 0;
