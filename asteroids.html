@@ -43,6 +43,8 @@
     const scene = createScene(); //Call the createScene function
     const ship = BABYLON.MeshBuilder.CreateCylinder("ship", {diameterTop: 0, diameterBottom: 1, tesselation: 4, height: 2}, scene);
 
+    let level = -1;
+
     function createExhaust() {
       const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, scene);
       exhaust.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
@@ -82,7 +84,7 @@
     // ship.enablePhysics();
     ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
-    const wrapped = [
+    let wrapped = [
       ship
     ];
 
@@ -202,6 +204,7 @@
     function crackAsteroid(oid) {
       scene.removeMesh(oid);
       setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
+      wrapped = wrapped.filter(i => i !== oid);
 
       const v1 = new BABYLON.Vector3(Math.random(), Math.random(), 0).normalize();
 
@@ -226,8 +229,6 @@
           a1 = createAsteroid(oid.diameter - 1);
           a2 = createAsteroid(oid.diameter - 1);
 
-
-
           a1.position = oid.position.clone().add(v1.scale(oid.diameter * 0.4));
           a2.position = oid.position.clone().add(v1.scale(-1 * oid.diameter * 0.4 ));
 
@@ -240,14 +241,24 @@
         createOidExplosion(v1, oid.position);
         // FIXME: small should fire, big ones should stay on place
       }
+
+      if(wrapped.length === 1) { // all asteroids gone
+        nextLevel();
+      }
     }
 
     let gameOver = false;
 
-    for(i=0;i<10;i++) {
-      const oid = createAsteroid(Math.random() * 8 + 1);
-      wrapped.push(oid);
+    function nextLevel() {
+      level++;
+      console.log('NEXT LEVEL', level);
+      for(i=0; i<Math.pow(2, level); i++) {
+        const oid = createAsteroid(Math.random() * 8 + 1);
+        wrapped.push(oid);
+      }
     }
+
+    nextLevel();
 
     function createExplosion() {
       const explosion = new BABYLON.ParticleSystem("explosion", 2000, scene);
@@ -391,12 +402,12 @@
           obj.position.x += 100;
         }
 
-        if(obj.position.y > 50) {
-          obj.position.y -= 100;
+        if(obj.position.y > 40) {
+          obj.position.y -= 80;
         }
 
-        if(obj.position.y < -50) {
-          obj.position.y += 100;
+        if(obj.position.y < -40) {
+          obj.position.y += 80;
         }
 
         obj.position.z = 0;
