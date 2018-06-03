@@ -112,6 +112,8 @@
       return oid;
     }
 
+    let balls = [];
+
     function createBall() {
       const ball = BABYLON.MeshBuilder.CreateSphere(`ball`, { diameter: 0.5, segments: 2 }, scene);
       ball.material = ballMaterial;
@@ -130,6 +132,9 @@
       ).add(ship.physicsImpostor.getLinearVelocity()); // .add(ship.velocity);
 
       ball.physicsImpostor.applyImpulse(force, ball.getAbsolutePosition());
+
+      ball.ttl = new Date().getTime() + 1000;
+      balls.push(ball);
     }
 
     for(i=0;i<10;i++) {
@@ -168,6 +173,8 @@
     }
 
     scene.registerBeforeRender(() => {
+      const now = new Date().getTime();
+
       if (keys.ArrowUp) {
         const q = ship.rotationQuaternion.toEulerAngles();
         const force = new BABYLON.Vector3(
@@ -202,6 +209,12 @@
 
         obj.position.z = 0;
       })
+
+      balls.filter(ball => ball.ttl <= now).map(ball => {
+        console.log('ball ttl done');
+        scene.removeMesh(ball)
+      });
+      balls = balls.filter(ball => ball.ttl > now);
     });
 
     engine.runRenderLoop(() => scene.render());
