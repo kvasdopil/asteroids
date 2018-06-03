@@ -138,6 +138,7 @@
         me.object.ttl = 0;
         other.object.physicsImpostor = null;
         scene.removeMesh(other.object);
+
         // TODO: properly remove an object from scene (inc. physics)
       });
 
@@ -153,10 +154,16 @@
     }
     ship.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
       gameOver = true;
-      scene.removeMesh(ship);
-      exhaust.stop();
+
+      //exhaust.stop();
 
       const explosion = createExplosion();
+
+      me.object.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
+      exhaust.start();
+
+      setTimeout(() => exhaust.stop(), 500);
+      setTimeout(() => scene.removeMesh(ship), 1000);
     });
 
     function createExplosion() {
@@ -180,7 +187,7 @@
       explosion.maxEmitPower = 4;
       explosion.updateSpeed = 0.005;
 
-      explosion.emitter = ship.position.clone();
+      explosion.emitter = ship;
       explosion.targetStopDuration = .3;
       explosion.start();
     }
