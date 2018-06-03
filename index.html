@@ -42,9 +42,15 @@
       // console.log(MAX_Y, MAX_X)
       // camera.attachControl(canvas, true);
 
-      // const box = BABYLON.MeshBuilder.CreateBox("ship", {size: 1}, scene);
-      // box.scaling.x = MAX_X;
-      // box.scaling.y = MAX_Y;
+      var bgMaterial = new BABYLON.StandardMaterial("background", scene);
+      bgMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+      bgMaterial.disableLighting = true;
+
+      const box = BABYLON.MeshBuilder.CreateBox("background", {size: 1}, scene);
+      box.scaling.x = 99999;
+      box.scaling.y = 99999;
+      box.position.z = 20;
+      box.material = bgMaterial;
 
       const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
       const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
