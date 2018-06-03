@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Asteroids</title>
+  <style type="text/css">
+    body {
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+    <script src="./cannon.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
+</head>
+<body>
+  <canvas id="renderCanvas" touch-action="none"></canvas>
+  <script type="text/javascript">
+    var canvas = document.getElementById("renderCanvas"); // Get the canvas element
+    var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+    function createScene() {
+      const scene = new BABYLON.Scene(engine);
+
+      const camera = new BABYLON.UniversalCamera("Camera", new BABYLON.Vector3(0, 0, -100), scene);
+      camera.setTarget(BABYLON.Vector3.Zero());
+      // camera.attachControl(canvas, true);
+
+      const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+      const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+
+      scene.workerCollisions = true;
+
+      return scene;
+    };
+
+    const scene = createScene(); //Call the createScene function
+    const ship = BABYLON.MeshBuilder.CreateCylinder("ship", {diameterTop: 0, diameterBottom: 1, tesselation: 4, height: 2}, scene);
+
+    let level = -1;
+
+    function createExhaust() {
+      const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, scene);
+      exhaust.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      exhaust.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
+      exhaust.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
+      exhaust.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      exhaust.minSize = 0.1;
+      exhaust.maxSize = 0.5;
+      exhaust.minLifeTime = 0;
+      exhaust.maxLifeTime = 0.5;
+      exhaust.emitRate = 1000;
+      exhaust.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      exhaust.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      exhaust.direction1 = new BABYLON.Vector3(-1, 5, 0).normalize();
+      exhaust.direction2 = new BABYLON.Vector3(1, 5, 0).normalize();
+      exhaust.minEmitPower = -20;
+      exhaust.maxEmitPower = -50;
+      exhaust.updateSpeed = 0.005;
+
+      return exhaust;
+    }
+
+    const exhaust = createExhaust();
+
+    exhaust.emitter = ship;
+
+    var oidMaterial = new BABYLON.StandardMaterial("asteroid material", scene);
+    oidMaterial.diffuseColor = new BABYLON.Color3(.5, .5, .5);
+    oidMaterial.wireframe = true;
+
+    var ballMaterial = new BABYLON.StandardMaterial("ball material", scene);
+    ballMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+
+    var physicsPlugin = new BABYLON.CannonJSPlugin();
+    scene.enablePhysics(new BABYLON.Vector3(0, 0, 0));
+
+    // ship.enablePhysics();
+    ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+
+    let wrapped = [
+      ship
+    ];
+
+
+    function createAsteroid(diameter) {
+      const oid = BABYLON.MeshBuilder.CreateSphere(`oid`, { diameter, segments: 2 }, scene);
+      oid.gen = 0;
+      oid.position = new BABYLON.Vector3(
+        Math.random() * 80 - 40,
+        Math.random() * 80 - 40,
+        0
+      );
+      oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.1 }, scene);
+      const force = new BABYLON.Vector3(
+        100 * (Math.random() * 2 - 1),
+        100 * (Math.random() * 2 - 1),
+        0,
+      );
+      oid.physicsImpostor.applyImpulse(force, oid.getAbsolutePosition());
+      oid.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(
+        1 * (Math.random() * 2 - 1),
+        1 * (Math.random() * 2 - 1),
+        1 * (Math.random() * 2 - 1),
+        0
+      ));
+      oid.material = oidMaterial;
+
+      oid.diameter = diameter;
+
+      oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, (me, other) => {
+        gameOver = true;
+
+        //exhaust.stop();
+
+        const explosion = createExplosion();
+
+        other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
+        exhaust.start();
+
+        setTimeout(() => exhaust.stop(), 500);
+        setTimeout(() => {
+          scene.removeMesh(ship);
+
+          setTimeout(() => scene.getPhysicsEngine().removeImpostor(other), 0);
+        }, 1000);
+      });
+
+      return oid;
+    }
+
+    let balls = [];
+
+    function createBall() {
+      const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
+      ball.material = ballMaterial;
+      const q = ship.rotationQuaternion.toEulerAngles();
+
+      ball.position = ship.position.clone();
+      ball.position.x += 2 * Math.sin(q.z) * -1;
+      ball.position.y += 2 * Math.cos(q.z);
+
+      ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+
+      const force = new BABYLON.Vector3(
+        50 * Math.sin(q.z) * -1,
+        50 * Math.cos(q.z),
+        0,
+      ).add(ship.physicsImpostor.getLinearVelocity()); // .add(ship.velocity);
+
+      const force2 = new BABYLON.Vector3(
+        -1 * Math.sin(q.z) * -1,
+        -1 * Math.cos(q.z),
+        0,
+      );
+
+      ball.physicsImpostor.applyImpulse(force, ball.getAbsolutePosition());
+      ship.physicsImpostor.applyImpulse(force2, ship.getAbsolutePosition());
+
+      ball.ttl = new Date().getTime() + 1000;
+      balls.push(ball);
+
+      const fire = new BABYLON.ParticleSystem("exhaust", 2000, scene);
+      fire.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      fire.color1 = new BABYLON.Color4(0, 0.8, 1.0, 1.0);
+      fire.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
+      fire.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      fire.minSize = 0.1;
+      fire.maxSize = 1;
+      fire.minLifeTime = 0;
+      fire.maxLifeTime = 0.1;
+      fire.emitRate = 1000;
+      fire.minEmitBox = new BABYLON.Vector3(0.1, 0.1, 0);
+      fire.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 0);
+
+      fire.direction1 = new BABYLON.Vector3(-0.2, -0.2, -0.2);
+      fire.direction2 = new BABYLON.Vector3(0.2, 0.2, 0.2);
+      fire.minAngularSpeed = -1;
+      fire.maxAngularSpeed = 1;
+      fire.minEmitPower = 0.5;
+      fire.maxEmitPower = 1;
+      fire.updateSpeed = 0.005;
+
+      fire.emitter = ball;
+      //explosion.targetStopDuration = .3;
+      fire.start();
+
+      ball.fire = fire;
+
+      ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
+        me.object.ttl = 0;
+        crackAsteroid(other.object);
+        createBallExplosion(ball.position.clone());
+      });
+    }
+
+
+
+    function crackAsteroid(oid) {
+      scene.removeMesh(oid);
+      setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
+      wrapped = wrapped.filter(i => i !== oid);
+
+      const v1 = new BABYLON.Vector3(Math.random(), Math.random(), 0).normalize();
+
+      if (oid.diameter > 3 && oid.gen <= 1) {
+        if(Math.random() > .5 && oid.diameter > 4) {
+          const v2 = new BABYLON.Vector3(Math.random(), Math.random(), 0).normalize();
+
+          a1 = createAsteroid(oid.diameter / 2);
+          a2 = createAsteroid(oid.diameter / 2);
+          a3 = createAsteroid(oid.diameter / 2);
+
+          a1.position = oid.position.clone().add(v1.scale(oid.diameter * 0.45));
+          a2.position = oid.position.clone().add(v1.scale(oid.diameter * 0.45));
+          a3.position = oid.position.clone().add(v1.add(v2).scale(oid.diameter * 0.45));
+          a1.gen = oid.gen + 1;
+          a2.gen = oid.gen + 1;
+          a3.gen = oid.gen + 1;
+          wrapped.push(a1);
+          wrapped.push(a2);
+          wrapped.push(a3);
+         } else {
+          a1 = createAsteroid(oid.diameter - 1);
+          a2 = createAsteroid(oid.diameter - 1);
+
+          a1.position = oid.position.clone().add(v1.scale(oid.diameter * 0.4));
+          a2.position = oid.position.clone().add(v1.scale(-1 * oid.diameter * 0.4 ));
+
+          a1.gen = oid.gen + 1;
+          a2.gen = oid.gen + 1;
+          wrapped.push(a1);
+          wrapped.push(a2);
+        }
+
+        createOidExplosion(v1, oid.position);
+        // FIXME: small should fire, big ones should stay on place
+      }
+
+      if(wrapped.length === 1) { // all asteroids gone
+        nextLevel();
+      }
+    }
+
+    let gameOver = false;
+
+    function nextLevel() {
+      level++;
+      console.log('NEXT LEVEL', level);
+      for(i=0; i<Math.pow(2, level); i++) {
+        const oid = createAsteroid(Math.random() * 8 + 1);
+        wrapped.push(oid);
+      }
+    }
+
+    nextLevel();
+
+    function createExplosion() {
+      const explosion = new BABYLON.ParticleSystem("explosion", 2000, scene);
+      explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      explosion.color1 = new BABYLON.Color4(1, 0.8, 1.0, 1.0);
+      explosion.color2 = new BABYLON.Color4(1, 0.5, 1.0, 1.0);
+      explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      explosion.minSize = 0.4;
+      explosion.maxSize = 1.3;
+      explosion.minLifeTime = 0;
+      explosion.maxLifeTime = 0.5;
+      explosion.emitRate = 1000;
+      //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      explosion.direction1 = new BABYLON.Vector3(-5, -5, -5);
+      explosion.direction2 = new BABYLON.Vector3(5, 5, 5);
+      explosion.minAngularSpeed = -2;
+      explosion.maxAngularSpeed = 2;
+      explosion.minEmitPower = 0.5;
+      explosion.maxEmitPower = 4;
+      explosion.updateSpeed = 0.005;
+
+      explosion.emitter = ship;
+      explosion.targetStopDuration = .3;
+      explosion.start();
+    }
+
+
+    function createBallExplosion(target) {
+      const explosion = new BABYLON.ParticleSystem("ball explosion", 2000, scene);
+      explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      explosion.color1 = new BABYLON.Color4(0, 0.8, 1.0, 1.0);
+      explosion.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
+      explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+      explosion.minSize = 0.1;
+      explosion.maxSize = 1;
+      explosion.minLifeTime = 0;
+      explosion.maxLifeTime = 0.25;
+      explosion.emitRate = 1000;
+      //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      explosion.direction1 = new BABYLON.Vector3(-20, -20, -20);
+      explosion.direction2 = new BABYLON.Vector3(20, 20, 20);
+      explosion.minAngularSpeed = -2;
+      explosion.maxAngularSpeed = 2;
+      explosion.minEmitPower = 0.5;
+      explosion.maxEmitPower = 4;
+      explosion.updateSpeed = 0.005;
+
+      explosion.emitter = target;
+      explosion.targetStopDuration = .03;
+      explosion.start();
+    }
+
+    function createOidExplosion(vector, target) {
+      const explosion = new BABYLON.ParticleSystem("oid explosion", 2000, scene);
+      explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+      explosion.color1 = new BABYLON.Color4(0.5, 0.5, 0.5, 0);
+      explosion.color2 = new BABYLON.Color4(1.0, 1.0, 1.0, 0);
+      explosion.colorDead = new BABYLON.Color4(0, 0, 0.0, 0.0);
+      explosion.minSize = 0.1;
+      explosion.maxSize = 1;
+      explosion.minLifeTime = 1;
+      explosion.maxLifeTime = 2;
+      explosion.emitRate = 2000;
+      //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
+      //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
+      explosion.direction1 = vector.scale(100); //new BABYLON.Vector3(-20, -20, -20);
+      //explosion.direction2 = vector.add(new BABYLON.Vector3(-1, -1, 0)); //new BABYLON.Vector3(20, 20, 20);
+      explosion.minAngularSpeed = -2;
+      explosion.maxAngularSpeed = 2;
+      explosion.minEmitPower = 0.1;
+      explosion.maxEmitPower = 1;
+      explosion.updateSpeed = 0.005;
+
+      explosion.emitter = target;
+      explosion.targetStopDuration = .03;
+      explosion.start();
+    }
+
+    window.addEventListener("resize", () => engine.resize());
+    const keys = {};
+
+    const firing = false;
+
+    document.onkeydown = ({key}) => {
+      if(gameOver) {
+        return;
+      }
+      keys[key] = 1;
+
+      if (key === 'ArrowLeft')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,5,0));
+
+      if (key === 'ArrowRight')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,-5,0));
+
+      if (key === 'ArrowUp')
+        exhaust.start();
+    }
+    document.onkeyup = ({key}) => {
+      if(gameOver) {
+        return;
+      }
+      keys[key] = 0;
+
+      if (key === 'ArrowLeft')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,0,0));
+
+      if (key === 'ArrowRight')
+        ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,0,0));
+
+      if (key === 'ArrowUp')
+        exhaust.stop();
+    }
+
+    scene.registerBeforeRender(() => {
+      const now = new Date().getTime();
+
+      if (keys.ArrowUp) {
+        const q = ship.rotationQuaternion.toEulerAngles();
+        const force = new BABYLON.Vector3(
+          0.5 * Math.sin(q.z) * -1,
+          0.5 * Math.cos(q.z),
+          0,
+        );
+        ship.physicsImpostor.applyImpulse(force, ship.getAbsolutePosition());
+      }
+
+      if (keys[' ']) {
+        keys[' '] = 0;
+        createBall();
+      }
+
+      wrapped.map(obj => {
+        if(obj.position.x > 50) {
+          obj.position.x -= 100;
+        }
+
+        if(obj.position.x < -50) {
+          obj.position.x += 100;
+        }
+
+        if(obj.position.y > 40) {
+          obj.position.y -= 80;
+        }
+
+        if(obj.position.y < -40) {
+          obj.position.y += 80;
+        }
+
+        obj.position.z = 0;
+      })
+
+      balls.filter(ball => ball.ttl <= now).map(ball => {
+        console.log('ball ttl done');
+        //ball.physicsImpostor = null;
+        scene.removeMesh(ball);
+        ball.fire.stop();
+        setTimeout(() => scene.getPhysicsEngine().removeImpostor(ball.physicsImpostor), 0);
+      });
+      balls = balls.filter(ball => ball.ttl > now);
+    });
+
+    engine.runRenderLoop(() => scene.render());
+/*
+    Physijs.scripts.worker = './physijs_worker.js';
+    Physijs.scripts.ammo = './ammo.js';
+
+    const renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    const HEIGHT = 150;
+    const WIDTH = HEIGHT * (window.innerWidth / window.innerHeight)
+
+    const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 );
+    camera.position.z = 100;
+    camera.position.x = WIDTH / 2;
+    camera.position.y = HEIGHT / 2;
+
+    const scene = new THREE.Scene();
+
+    const ship = createShip();
+    ship.position.x = WIDTH / 2;
+    ship.position.y = HEIGHT / 2;
+
+    function createShip() {
+      var geometry = new THREE.ConeGeometry(1, 3, 4);
+      const material = new THREE.MeshNormalMaterial();
+
+      const ship = new THREE.Mesh( geometry, material );
+
+      scene.add( ship );
+      ship.speed = {x: 0, y: 0};
+
+      return ship;
+    }
+
+    const fireballs = [];
+    const asteroids = [];
+    function createFireball() {
+      var geometry = new THREE.SphereGeometry(0.5, 4, 4);
+      const material = new THREE.MeshNormalMaterial();
+      const ball = new THREE.Mesh( geometry, material );
+      ball.visible = false;
+      scene.add( ball );
+      fireballs.push(ball);
+      return ball;
+    }
+
+    function createAsteroid(size) {
+      var geometry = new THREE.OctahedronGeometry(size, 1);
+      const material = new THREE.MeshNormalMaterial();
+      const ball = new THREE.Mesh( geometry, material );
+      ball.position.x = Math.random() * WIDTH;
+      ball.position.y = Math.random() * HEIGHT;
+      ball.sz = size;
+      ball.speed = {
+        x: 0.1 * (Math.random() * 2 - 1),
+        y: 0.1 * (Math.random() * 2 - 1),
+        rz: (0.1 / size) * (Math.random() * 2 - 1),
+        rx: (0.1 / size) * (Math.random() * 2 - 1),
+        ry: (0.1 / size) * (Math.random() * 2 - 1),
+      };
+      scene.add( ball );
+      asteroids.push(ball);
+      return ball;
+    }
+
+    function crackAsteroid(asteroid) {
+      asteroid.visible = false;
+      if(asteroid.sz < 4) {
+        return;
+      }
+
+      const a1 = createAsteroid(asteroid.sz - 2);
+      const a2 = createAsteroid(asteroid.sz - 2);
+      const a3 = createAsteroid(asteroid.sz - 2);
+
+      a1.position.x = asteroid.position.x; //TODO: shift a bit
+      a1.position.y = asteroid.position.y;
+
+      a2.position.x = asteroid.position.x; //TODO: shift a bit
+      a2.position.y = asteroid.position.y;
+
+      a3.position.x = asteroid.position.x; //TODO: shift a bit
+      a3.position.y = asteroid.position.y;
+
+      // TODO: randomize this
+      a1.position.add(new THREE.Vector3(asteroid.sz / 1.2, -1 * asteroid.sz / 1.2, 0));
+      a2.position.sub(new THREE.Vector3(-1 * asteroid.sz / 1.2, asteroid.sz / 1.2, 0));
+      a3.position.sub(new THREE.Vector3(asteroid.sz / 1.5, asteroid.sz / 1.5, 0));
+
+      a1.speed = {...asteroid.speed};
+      a1.speed.x += (1/asteroid.sz) * Math.random();
+
+      a2.speed = {...asteroid.speed};
+      a2.speed.x -= (1/asteroid.sz) * Math.random();
+
+      a3.speed = {...asteroid.speed};
+      a3.speed.x -= (1/asteroid.sz) * Math.random();
+      a3.speed.y -= (1/asteroid.sz) * Math.random();
+    }
+
+    function fire() {
+      const fireball = fireballs.find(a => !a.visible) || createFireball();
+      fireball.speed = {
+        x: -1 * Math.sin(ship.rotation.z) + ship.speed.x,
+        y: Math.cos(ship.rotation.z) + ship.speed.y,
+      };
+      fireball.position.x = ship.position.x;
+      fireball.position.y = ship.position.y;
+      fireball.visible = true;
+      fireball.lifetime = new Date().getTime() + 1000;
+    }
+
+    for (var i = 0; i<10; i++)
+      createAsteroid(Math.random() * 8 + 1);
+
+    const keys = {};
+
+    document.onkeydown = event => keys[event.key] = 1;
+    document.onkeyup = event => keys[event.key] = 0;
+
+    function collideAsteroids(a1, a2) {
+      const v1 = a1.position.clone().sub(a2.position);
+      const m1m2 = a1.sz / a2.sz;
+      const m2m1 = a2.sz / a1.sz;
+      x1 = a2.speed.x;
+      y2 = a2.speed.y;
+      a2.speed.x = a1.speed.x * m1m2; // - v1.x * 0.003;
+      a2.speed.y = a1.speed.y * m1m2; // - v1.y * 0.003;
+      a1.speed.x = x1 * m2m1; // + v1.x * 0.003;
+      a1.speed.y = y2 * m2m1; // + v1.y * 0.003;
+    }
+
+    let gameOver = false;
+
+    function animate() {
+      if(gameOver) {
+        return;
+      }
+      requestAnimationFrame( animate );
+      const t = new Date().getTime();
+
+      if (keys.ArrowUp) {
+        ship.speed.x = ship.speed.x - Math.sin(ship.rotation.z) * 0.01;
+        ship.speed.y = ship.speed.y + Math.cos(ship.rotation.z) * 0.01;
+      }
+      if (keys[' ']) {
+        fire();
+        keys[' '] = 0;
+      }
+      if (keys.ArrowLeft) {
+        ship.rotation.z += 0.1;
+      }
+      if (keys.ArrowRight) {
+        ship.rotation.z -= 0.1;
+      }
+
+      ship.position.x = (WIDTH + ship.position.x + ship.speed.x) % WIDTH;
+      ship.position.y = (HEIGHT + ship.position.y + ship.speed.y) % HEIGHT;
+
+      fireballs.map(ball => {
+        if (ball.visible) {
+          if (ball.lifetime < t) {
+            ball.visible = false;
+          } else {
+            ball.position.x = (WIDTH + ball.position.x + ball.speed.x) % WIDTH;
+            ball.position.y = (HEIGHT + ball.position.y + ball.speed.y) % HEIGHT;
+          }
+        }
+      });
+
+      asteroids.map(asteroid => {
+        if (asteroid.visible) {
+          // if (ball.lifetime < t) {
+          //   ball.visible = false;
+          //   ball.position.x = -9999; // -9999;
+          // } else {
+            asteroid.position.x = (WIDTH + asteroid.position.x + asteroid.speed.x) % WIDTH;
+            asteroid.position.y = (HEIGHT + asteroid.position.y + asteroid.speed.y) % HEIGHT;
+            asteroid.rotation.z = asteroid.rotation.z + asteroid.speed.rz;
+            asteroid.rotation.x = asteroid.rotation.x + asteroid.speed.rx;
+            asteroid.rotation.y = asteroid.rotation.y + asteroid.speed.ry;
+          //}
+        }
+      });
+
+      fireballs.map(ball => {
+        asteroids.map(asteroid => {
+          if(ball.visible && asteroid.visible) {
+            if(ball.position.distanceTo(asteroid.position) <= asteroid.sz) {
+              ball.visible = false;
+              crackAsteroid(asteroid);
+            }
+          }
+        })
+      });
+
+      const aa = asteroids.filter(a => a.visible);
+
+      aa.map(oid => {
+        if(oid.position.distanceTo(ship.position) <= oid.sz) {
+          gameOver = true;
+        }
+      })
+
+      for(let i = 0; i<aa.length; i++)
+        for(let j=0; j<i; j++) {
+          if(aa[i].position.distanceTo(aa[j].position) <= (aa[i].sz + aa[j].sz)) {
+            collideAsteroids(aa[i], aa[j]);
+          }
+        }
+      renderer.render( scene, camera );
+    }
+
+    animate();*/
+  </script>
+</body>
+</html>
