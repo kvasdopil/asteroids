@@ -172,16 +172,17 @@
       fire.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
       fire.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
       fire.minSize = 0.1;
-      fire.maxSize = 1;
+      fire.maxSize = 2;
       fire.minLifeTime = 0;
-      fire.maxLifeTime = 0.01;
+      fire.maxLifeTime = 0.1;
       fire.emitRate = 1000;
-      //fireon.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
-      //fireon.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
-      fire.direction1 = new BABYLON.Vector3(-0.3, -0.3, -0.3);
-      fire.direction2 = new BABYLON.Vector3(0.3, 0.3, 0.3);
-      fire.minAngularSpeed = -2;
-      fire.maxAngularSpeed = 2;
+      fire.minEmitBox = new BABYLON.Vector3(0.1, 0.1, 0);
+      fire.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 0);
+
+      fire.direction1 = new BABYLON.Vector3(-0.2, -0.2, -0.2);
+      fire.direction2 = new BABYLON.Vector3(0.2, 0.2, 0.2);
+      fire.minAngularSpeed = -1;
+      fire.maxAngularSpeed = 1;
       fire.minEmitPower = 0.5;
       fire.maxEmitPower = 1;
       fire.updateSpeed = 0.005;
