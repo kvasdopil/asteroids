@@ -172,7 +172,7 @@
       fire.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
       fire.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
       fire.minSize = 0.1;
-      fire.maxSize = 1;
+      fire.maxSize = 1.5;
       fire.minLifeTime = 0;
       fire.maxLifeTime = 0.1;
       fire.emitRate = 1000;
@@ -239,9 +239,10 @@
           wrapped.push(a2);
         }
 
-        createOidExplosion(v1, oid.position);
         // FIXME: small should fire, big ones should stay on place
       }
+
+      createOidExplosion(v1, oid.position);
 
       if(wrapped.length === 1) { // all asteroids gone
         nextLevel();
