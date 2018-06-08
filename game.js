@@ -358,6 +358,9 @@ function onResize() {
 
 function onKeyDown({ key }) {
   if(gameOver) {
+    if (key === " ") {
+      window.history.go(0);
+    }
     return;
   }
   keys[key] = 1;
@@ -391,7 +394,7 @@ function onKeyUp({key}) {
 function updateScene() {
   const now = new Date().getTime();
 
-  if (keys.ArrowUp) {
+  if (keys.ArrowUp && !gameOver) {
     const q = ship.rotationQuaternion.toEulerAngles();
     const force = new BABYLON.Vector3(
       0.5 * Math.sin(q.z) * -1,
