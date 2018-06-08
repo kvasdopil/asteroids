@@ -37,7 +37,51 @@ const firing = false;
 document.onkeydown = onKeyDown;
 document.onkeyup = onKeyUp;
 
+
+// GUI
+var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui");
+var text1 = new BABYLON.GUI.TextBlock();
+
+text1.color = "white";
+text1.fontSize = 24;
+text1.top = 30;
+advancedTexture.addControl(text1);
+
+let onboardingMode;
+
+setOnboarding('move');
+
 nextLevel();
+
+function setOnboarding(id) {
+  if (id === 'move') {
+    text1.text = "Use ← ↑ → to move";
+  }
+  if (id === 'fire') {
+    text1.text = 'Press SPACE to fire';
+  }
+
+  if (id === 'hit') {
+    text1.text = 'Now hit that asteroid';
+  }
+
+  if (id === 'bye') {
+    text1.text = 'Destroy all the asteroids';
+    setTimeout(() => text1.text = 'Good luck', 2000);
+    setTimeout(() => text1.text = '', 3000);
+  }
+
+  if (id === 'dead') {
+    text1.text = 'Press SPACE to restart';
+  }
+
+  if (id === 'level') {
+    text1.text = `Level ${level}` ;
+    setTimeout(() => text1.text = '', 1000);
+  }
+
+  onboardingMode = id;
+}
 
 scene.registerBeforeRender(updateScene);
 engine.runRenderLoop(() => scene.render());
@@ -131,6 +175,7 @@ function createAsteroid(diameter) {
 
   oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, (me, other) => {
     gameOver = true;
+    setOnboarding('dead');
 
     //exhaust.stop();
 
@@ -216,6 +261,10 @@ function createBall() {
 
 
 function crackAsteroid(oid) {
+  if (onboardingMode === 'hit') {
+    setOnboarding('bye');
+  }
+
   scene.removeMesh(oid);
   setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
   wrapped = wrapped.filter(i => i !== oid);
@@ -264,7 +313,9 @@ function crackAsteroid(oid) {
 
 function nextLevel() {
   level++;
-  console.log('NEXT LEVEL', level);
+  if (onboardingMode !== 'move') {
+    setOnboarding('level');
+  }
   for(i=0; i<Math.pow(2, level); i++) {
     const oid = createAsteroid(Math.random() * 8 + 1);
     wrapped.push(oid);
@@ -364,6 +415,18 @@ function onKeyDown({ key }) {
     return;
   }
   keys[key] = 1;
+
+  if (onboardingMode === 'move') {
+    if (['ArrowUp', 'ArrowLeft', 'ArrowRight'].indexOf(key) >= 0) {
+      setOnboarding('fire');
+    }
+  }
+
+  if (onboardingMode === 'fire') {
+    if (key === ' ') {
+      setOnboarding('hit');
+    }
+  }
 
   if (key === 'ArrowLeft')
     ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,5,0));
