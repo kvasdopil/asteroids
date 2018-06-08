@@ -44,7 +44,7 @@ var text1 = new BABYLON.GUI.TextBlock();
 
 text1.color = "white";
 text1.fontSize = 24;
-text1.top = 30;
+text1.top = 50;
 advancedTexture.addControl(text1);
 
 let onboardingMode;
