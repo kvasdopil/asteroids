@@ -54,6 +54,17 @@ engine.runRenderLoop(() => scene.render());
 let down = false;
 let mouse = {x:0, y: 0};
 
+document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+
+document.addEventListener('touchmove', function(event) {
+  event = event.originalEvent || event;
+  if(event.scale > 1) {
+    event.preventDefault();
+  }
+}, false);
+
 //if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
   canvas.addEventListener('mousedown', e => {
     down = true;
