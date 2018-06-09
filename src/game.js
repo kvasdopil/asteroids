@@ -401,7 +401,7 @@ function updateScene() {
     createBall();
   }
 
-  const tgt = new BABYLON.Vector3((MAX_X * mouse.x), (- MAX_Y * mouse.y), 0);
+  const tgt = new BABYLON.Vector3((MAX_X * mouse.x) - ship.position.x, (- MAX_Y * mouse.y) - ship.position.y, 0);
 
   const tgtN = tgt.clone();
   tgtN.normalize();
