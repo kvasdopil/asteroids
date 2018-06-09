@@ -54,7 +54,7 @@ engine.runRenderLoop(() => scene.render());
 let down = false;
 let mouse = {x:0, y: 0};
 
-if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+//if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
   window.addEventListener('touchstart', e => {
     down = true;
     onMove(e);
@@ -67,7 +67,7 @@ if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
     down = false;
     exhaust.stop();
   });
-}
+//}
 
 function onMove (e) {
   mouse.x = (e.touches[0].clientX / window.innerWidth) - .5;
