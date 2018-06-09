@@ -7,8 +7,8 @@ let fov = 0;
 
 const scene = createScene(); //Call the createScene function
 
-const { fx } = window;
-fx.init(scene);
+const fx = new window.Fx(scene);
+const gui = new window.Gui(scene);
 
 const ship = createShip();
 
@@ -41,13 +41,15 @@ document.onkeydown = onKeyDown;
 document.onkeyup = onKeyUp;
 
 let onboardingMode;
-const gui = new window.Gui(scene);
 
 setOnboarding('move');
 
 gui.resetScore();
 
 nextLevel();
+
+scene.registerBeforeRender(updateScene);
+engine.runRenderLoop(() => scene.render());
 
 function setOnboarding(id) {
   if (id === 'move') {
@@ -78,9 +80,6 @@ function setOnboarding(id) {
 
   onboardingMode = id;
 }
-
-scene.registerBeforeRender(updateScene);
-engine.runRenderLoop(() => scene.render());
 
 function createScene() {
   const scene = new BABYLON.Scene(engine);
@@ -214,7 +213,12 @@ function crackAsteroid(oid) {
     setOnboarding('bye');
   }
 
-  gui.addScore(100);
+  const speedMultiplier = Math.ceil(Math.sqrt(oid.physicsImpostor.getLinearVelocity().length()));
+  const sizeMultiplier = Math.ceil(Math.sqrt(9 - oid.diameter));
+
+  console.log(speedMultiplier, sizeMultiplier)
+
+  gui.addScore(10 * speedMultiplier * sizeMultiplier);
 
   scene.removeMesh(oid);
   setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
@@ -345,6 +349,26 @@ function updateScene() {
   }
 
   wrapped.map(obj => {
+    if(obj.position.x > MAX_X / 2) {
+      obj.position.x -= MAX_X;
+    }
+
+    if(obj.position.x < -MAX_X / 2) {
+      obj.position.x += MAX_X;
+    }
+
+    if(obj.position.y > MAX_Y / 2) {
+      obj.position.y -= MAX_Y;
+    }
+
+    if(obj.position.y < -MAX_Y / 2) {
+      obj.position.y += MAX_Y;
+    }
+
+    obj.position.z = 0;
+  })
+
+  balls.map(obj => {
     if(obj.position.x > MAX_X / 2) {
       obj.position.x -= MAX_X;
     }
