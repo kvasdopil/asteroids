@@ -180,26 +180,27 @@ function createAsteroid(diameter) {
 
   oid.diameter = diameter;
 
-  oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, (me, other) => {
-    gameOver = true;
-    setOnboarding('dead');
-
-    //exhaust.stop();
-
-    const explosion = fx.createExplosion(ship);
-
-    other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
-    exhaust.start();
-
-    setTimeout(() => exhaust.stop(), 500);
-    setTimeout(() => {
-      scene.removeMesh(ship);
-
-      setTimeout(() => scene.getPhysicsEngine().removeImpostor(other), 0);
-    }, 1000);
-  });
-
+  oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onAsteroidHitShip);
   return oid;
+}
+
+function onAsteroidHitShip(me, other) {
+  gameOver = true;
+  setOnboarding('dead');
+
+  //exhaust.stop();
+
+  const explosion = fx.createExplosion(ship);
+
+  other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
+  exhaust.start();
+
+  setTimeout(() => exhaust.stop(), 500);
+  setTimeout(() => {
+    scene.removeMesh(ship);
+
+    setTimeout(() => scene.getPhysicsEngine().removeImpostor(other), 0);
+  }, 1000);
 }
 
 function createBall() {
@@ -235,11 +236,13 @@ function createBall() {
 
   ball.fire = fire;
 
-  ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
-    me.object.ttl = 0;
-    crackAsteroid(other.object);
-    fx.createBallExplosion(ball.position.clone());
-  });
+  ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), onBallHitAsteroid);
+}
+
+function onBallHitAsteroid(me, other) {
+  me.object.ttl = 0;
+  crackAsteroid(other.object);
+  fx.createBallExplosion(me.object.position.clone());
 }
 
 function crackAsteroid(oid) {
@@ -277,7 +280,9 @@ function crackAsteroid(oid) {
       wrapped.push(a1);
       wrapped.push(a2);
       wrapped.push(a3);
-     } else {
+
+      balls.map(ball => ball.physicsImpostor.registerOnPhysicsCollide([a1, a2, a3].map(w => w.physicsImpostor), onBallHitAsteroid));
+    } else {
       a1 = createAsteroid(oid.diameter - 1);
       a2 = createAsteroid(oid.diameter - 1);
 
@@ -288,6 +293,8 @@ function crackAsteroid(oid) {
       a2.gen = oid.gen + 1;
       wrapped.push(a1);
       wrapped.push(a2);
+
+      balls.map(ball => ball.physicsImpostor.registerOnPhysicsCollide([a1, a2].map(w => w.physicsImpostor), onBallHitAsteroid));
     }
 
     // FIXME: small should fire, big ones should stay on place
