@@ -40,47 +40,40 @@ const firing = false;
 document.onkeydown = onKeyDown;
 document.onkeyup = onKeyUp;
 
-
-// GUI
-var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui");
-var text1 = new BABYLON.GUI.TextBlock();
-
-text1.color = "white";
-text1.fontSize = 24;
-text1.top = 50;
-advancedTexture.addControl(text1);
-
 let onboardingMode;
+const gui = new window.Gui(scene);
 
 setOnboarding('move');
+
+gui.resetScore();
 
 nextLevel();
 
 function setOnboarding(id) {
   if (id === 'move') {
-    text1.text = "Use ← ↑ → to move";
+    gui.setMessage("Use ← ↑ → to move");
   }
   if (id === 'fire') {
-    text1.text = 'Press SPACE to fire';
+    gui.setMessage('Press SPACE to fire');
   }
 
   if (id === 'hit') {
-    text1.text = 'Now hit that asteroid';
+    gui.setMessage('Now hit that asteroid');
   }
 
   if (id === 'bye') {
-    text1.text = 'Destroy all the asteroids';
-    setTimeout(() => text1.text = 'Good luck', 2000);
-    setTimeout(() => text1.text = '', 3000);
+    gui.setMessage('Destroy all the asteroids');
+    setTimeout(() => gui.setMessage('Good luck'), 2000);
+    setTimeout(() => gui.setMessage(''), 3000);
   }
 
   if (id === 'dead') {
-    text1.text = 'Press SPACE to restart';
+    gui.setMessage('Press ENTER to restart');
   }
 
   if (id === 'level') {
-    text1.text = `Level ${level}` ;
-    setTimeout(() => text1.text = '', 1000);
+    gui.setMessage(`Level ${level}` );
+    setTimeout(() => gui.setMessage(''), 1000);
   }
 
   onboardingMode = id;
@@ -102,7 +95,7 @@ function createScene() {
   // console.log(MAX_Y, MAX_X)
   // camera.attachControl(canvas, true);
 
-  var bgMaterial = new BABYLON.StandardMaterial("background", scene);
+  var bgMaterial = new BABYLON.StandardMaterial("background material", scene);
   bgMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
   bgMaterial.disableLighting = true;
 
@@ -221,6 +214,8 @@ function crackAsteroid(oid) {
     setOnboarding('bye');
   }
 
+  gui.addScore(100);
+
   scene.removeMesh(oid);
   setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
   wrapped = wrapped.filter(i => i !== oid);
@@ -286,7 +281,7 @@ function onResize() {
 
 function onKeyDown({ key }) {
   if(gameOver) {
-    if (key === " ") {
+    if (key === "Enter") {
       window.history.go(0);
     }
     return;
