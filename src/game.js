@@ -51,58 +51,28 @@ nextLevel();
 scene.registerBeforeRender(updateScene);
 engine.runRenderLoop(() => scene.render());
 
-// const gizmo = BABYLON.MeshBuilder.CreateSphere('gizmo', { diameter: 2, segments: 1 }, scene);
-
 let down = false;
 let mouse = {x:0, y: 0};
 
-window.addEventListener("mousemove", function (e) {
-  mouse.x = (e.clientX / window.innerWidth) - .5;
-  mouse.y = (e.clientY / window.innerHeight) - .5;
-});
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+  window.addEventListener('touchstart', e => {
+    down = true;
+    onMove(e);
+    exhaust.start();
+  });
 
-window.onmousedown =  () => {
-  down = true;
-  console.log('d');
-};
+  window.addEventListener('touchmove', onMove);
 
-window.onmouseup = () => {
-  down = false;
-};
+  window.addEventListener('touchend', () => {
+    down = false;
+    exhaust.stop();
+  });
+}
 
-// window.addEventListener("click", function (e) {
-//   const x = (e.clientX / window.innerWidth) - .5;
-//   const y = (e.clientY / window.innerHeight) - .5;
-
-//   const tgt = new BABYLON.Vector3((MAX_X * x) - ship.position.x, (- MAX_Y * y) - ship.position.y, 0);
-//   const tgtN = tgt.clone();
-//   tgtN.normalize();
-
-//   //console.log(tgt);
-// //  tgt.normalizeInPlace()
-
-//   // ship.rotation. // z = x; // Math.asin(x);
-//   // console.log(tgt);
-
-//   // ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,-10 * x,0));
-//   // ship.rotation.z = -1 * Math.sin(Math.PI / x);
-//   // ship.rotation.z = Math.cos(Math.PI / x);
-
-//   // new BABYLON.Vector3(x, y, 0);
-//   // gizmo.position.x = tgt.x;
-//   // gizmo.position.y = tgt.y;
-
-//   const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
-//   //ship.rotationQuaternion = rv;
-//   ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
-
-//   //const pitch = Math.asin(-tgt.y);
-//   //const yaw = Math.atan2(tgt.x, d.Z)
-
-//   // console.log(Math.atan(x / y));
-
-//   // console.log(ship.rotationQuaternion);
-// });
+function onMove (e) {
+  mouse.x = (e.touches[0].clientX / window.innerWidth) - .5;
+  mouse.y = (e.touches[0].clientY / window.innerHeight) - .5;
+}
 
 function setOnboarding(id) {
   if (id === 'move') {
