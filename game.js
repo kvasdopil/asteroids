@@ -6,12 +6,15 @@ let MAX_X = 100;
 let fov = 0;
 
 const scene = createScene(); //Call the createScene function
+
+const { fx } = window;
+fx.init(scene);
+
 const ship = createShip();
 
 let level = -1;
 
-const exhaust = createExhaust();
-exhaust.emitter = ship;
+const exhaust = fx.createExhaust(ship);
 
 var oidMaterial = new BABYLON.StandardMaterial("asteroid material", scene);
 oidMaterial.diffuseColor = new BABYLON.Color3(.5, .5, .5);
@@ -126,28 +129,6 @@ function createShip() {
   return ship;
 }
 
-function createExhaust() {
-  const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, scene);
-  exhaust.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
-  exhaust.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
-  exhaust.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
-  exhaust.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
-  exhaust.minSize = 0.1;
-  exhaust.maxSize = 0.5;
-  exhaust.minLifeTime = 0;
-  exhaust.maxLifeTime = 0.5;
-  exhaust.emitRate = 1000;
-  exhaust.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
-  exhaust.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
-  exhaust.direction1 = new BABYLON.Vector3(-1, 5, 0).normalize();
-  exhaust.direction2 = new BABYLON.Vector3(1, 5, 0).normalize();
-  exhaust.minEmitPower = -20;
-  exhaust.maxEmitPower = -50;
-  exhaust.updateSpeed = 0.005;
-
-  return exhaust;
-}
-
 function createAsteroid(diameter) {
   const oid = BABYLON.MeshBuilder.CreateSphere(`oid`, { diameter, segments: 2 }, scene);
   oid.gen = 0;
@@ -179,7 +160,7 @@ function createAsteroid(diameter) {
 
     //exhaust.stop();
 
-    const explosion = createExplosion();
+    const explosion = fx.createExplosion(ship);
 
     other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
     exhaust.start();
@@ -224,41 +205,16 @@ function createBall() {
   ball.ttl = new Date().getTime() + 1000;
   balls.push(ball);
 
-  const fire = new BABYLON.ParticleSystem("exhaust", 2000, scene);
-  fire.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
-  fire.color1 = new BABYLON.Color4(0, 0.8, 1.0, 1.0);
-  fire.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
-  fire.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
-  fire.minSize = 0.1;
-  fire.maxSize = 1.5;
-  fire.minLifeTime = 0;
-  fire.maxLifeTime = 0.1;
-  fire.emitRate = 1000;
-  fire.minEmitBox = new BABYLON.Vector3(0.1, 0.1, 0);
-  fire.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 0);
-
-  fire.direction1 = new BABYLON.Vector3(-0.2, -0.2, -0.2);
-  fire.direction2 = new BABYLON.Vector3(0.2, 0.2, 0.2);
-  fire.minAngularSpeed = -1;
-  fire.maxAngularSpeed = 1;
-  fire.minEmitPower = 0.5;
-  fire.maxEmitPower = 1;
-  fire.updateSpeed = 0.005;
-
-  fire.emitter = ball;
-  //explosion.targetStopDuration = .3;
-  fire.start();
+  const fire = fx.createFire(ball);
 
   ball.fire = fire;
 
   ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), (me, other) => {
     me.object.ttl = 0;
     crackAsteroid(other.object);
-    createBallExplosion(ball.position.clone());
+    fx.createBallExplosion(ball.position.clone());
   });
 }
-
-
 
 function crackAsteroid(oid) {
   if (onboardingMode === 'hit') {
@@ -304,7 +260,7 @@ function crackAsteroid(oid) {
     // FIXME: small should fire, big ones should stay on place
   }
 
-  createOidExplosion(v1, oid.position);
+  fx.createOidExplosion(v1, oid.position);
 
   if(wrapped.length === 1) { // all asteroids gone
     nextLevel();
@@ -320,85 +276,6 @@ function nextLevel() {
     const oid = createAsteroid(Math.random() * 8 + 1);
     wrapped.push(oid);
   }
-}
-
-function createExplosion() {
-  const explosion = new BABYLON.ParticleSystem("explosion", 2000, scene);
-  explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
-  explosion.color1 = new BABYLON.Color4(1, 0.8, 1.0, 1.0);
-  explosion.color2 = new BABYLON.Color4(1, 0.5, 1.0, 1.0);
-  explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
-  explosion.minSize = 0.4;
-  explosion.maxSize = 1.3;
-  explosion.minLifeTime = 0;
-  explosion.maxLifeTime = 0.5;
-  explosion.emitRate = 1000;
-  //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
-  //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
-  explosion.direction1 = new BABYLON.Vector3(-5, -5, -5);
-  explosion.direction2 = new BABYLON.Vector3(5, 5, 5);
-  explosion.minAngularSpeed = -2;
-  explosion.maxAngularSpeed = 2;
-  explosion.minEmitPower = 0.5;
-  explosion.maxEmitPower = 4;
-  explosion.updateSpeed = 0.005;
-
-  explosion.emitter = ship;
-  explosion.targetStopDuration = .3;
-  explosion.start();
-}
-
-
-function createBallExplosion(target) {
-  const explosion = new BABYLON.ParticleSystem("ball explosion", 2000, scene);
-  explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
-  explosion.color1 = new BABYLON.Color4(0, 0.8, 1.0, 1.0);
-  explosion.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
-  explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
-  explosion.minSize = 0.1;
-  explosion.maxSize = 1;
-  explosion.minLifeTime = 0;
-  explosion.maxLifeTime = 0.25;
-  explosion.emitRate = 1000;
-  //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
-  //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
-  explosion.direction1 = new BABYLON.Vector3(-20, -20, -20);
-  explosion.direction2 = new BABYLON.Vector3(20, 20, 20);
-  explosion.minAngularSpeed = -2;
-  explosion.maxAngularSpeed = 2;
-  explosion.minEmitPower = 0.5;
-  explosion.maxEmitPower = 4;
-  explosion.updateSpeed = 0.005;
-
-  explosion.emitter = target;
-  explosion.targetStopDuration = .03;
-  explosion.start();
-}
-
-function createOidExplosion(vector, target) {
-  const explosion = new BABYLON.ParticleSystem("oid explosion", 2000, scene);
-  explosion.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
-  explosion.color1 = new BABYLON.Color4(0.5, 0.5, 0.5, 0);
-  explosion.color2 = new BABYLON.Color4(1.0, 1.0, 1.0, 0);
-  explosion.colorDead = new BABYLON.Color4(0, 0, 0.0, 0.0);
-  explosion.minSize = 0.1;
-  explosion.maxSize = 1;
-  explosion.minLifeTime = 1;
-  explosion.maxLifeTime = 2;
-  explosion.emitRate = 2000;
-  //explosion.minEmitBox = new BABYLON.Vector3(-0.3, -1, 0);
-  //explosion.maxEmitBox = new BABYLON.Vector3(0.3, -1, 0);
-  explosion.direction1 = vector.scale(100); //new BABYLON.Vector3(-20, -20, -20);
-  //explosion.direction2 = vector.add(new BABYLON.Vector3(-1, -1, 0)); //new BABYLON.Vector3(20, 20, 20);
-  explosion.minAngularSpeed = -2;
-  explosion.maxAngularSpeed = 2;
-  explosion.minEmitPower = 0.1;
-  explosion.maxEmitPower = 1;
-  explosion.updateSpeed = 0.005;
-
-  explosion.emitter = target;
-  explosion.targetStopDuration = .03;
-  explosion.start();
 }
 
 function onResize() {
