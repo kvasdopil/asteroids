@@ -51,39 +51,39 @@ nextLevel();
 scene.registerBeforeRender(updateScene);
 engine.runRenderLoop(() => scene.render());
 
-let down = false;
-let mouse = {x:0, y: 0};
+// let down = false;
+// let mouse = {x:0, y: 0};
 
-document.addEventListener('gesturestart', function (e) {
-    e.preventDefault();
-});
+// document.addEventListener('gesturestart', function (e) {
+//     e.preventDefault();
+// });
 
-document.addEventListener('touchmove', function(event) {
-  event = event.originalEvent || event;
-  if(event.scale > 1) {
-    event.preventDefault();
-  }
-}, false);
+// document.addEventListener('touchmove', function(event) {
+//   event = event.originalEvent || event;
+//   if(event.scale > 1) {
+//     event.preventDefault();
+//   }
+// }, false);
 
-//if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-  canvas.addEventListener('mousedown', e => {
-    down = true;
-    onMove(e);
-    exhaust.start();
-  });
+// //if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+//   canvas.addEventListener('mousedown', e => {
+//     down = true;
+//     onMove(e);
+//     exhaust.start();
+//   });
 
-  canvas.addEventListener('mousemove', onMove);
+//   canvas.addEventListener('mousemove', onMove);
 
-  canvas.addEventListener('mouseup', () => {
-    down = false;
-    exhaust.stop();
-  });
-//}
+//   canvas.addEventListener('mouseup', () => {
+//     down = false;
+//     exhaust.stop();
+//   });
+// //}
 
-function onMove (e) {
-  mouse.x = (e.clientX / window.innerWidth) - .5;
-  mouse.y = (e.clientY / window.innerHeight) - .5;
-}
+// function onMove (e) {
+//   mouse.x = (e.clientX / window.innerWidth) - .5;
+//   mouse.y = (e.clientY / window.innerHeight) - .5;
+// }
 
 function setOnboarding(id) {
   if (id === 'move') {
@@ -382,16 +382,16 @@ function updateScene() {
     createBall();
   }
 
-  const tgt = new BABYLON.Vector3((MAX_X * mouse.x) - ship.position.x, (- MAX_Y * mouse.y) - ship.position.y, 0);
+  // const tgt = new BABYLON.Vector3((MAX_X * mouse.x) - ship.position.x, (- MAX_Y * mouse.y) - ship.position.y, 0);
 
-  const tgtN = tgt.clone();
-  tgtN.normalize();
+  // const tgtN = tgt.clone();
+  // tgtN.normalize();
 
-  const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
-  ship.rotationQuaternion = rv;
-  if(down) {
-    ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
-  }
+  // const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
+  // ship.rotationQuaternion = rv;
+  // if(down) {
+  //   ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
+  // }
 
   wrapped.map(obj => {
     if(obj.position.x > MAX_X / 2) {
