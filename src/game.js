@@ -55,23 +55,23 @@ let down = false;
 let mouse = {x:0, y: 0};
 
 //if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-  window.addEventListener('touchstart', e => {
+  canvas.addEventListener('mousedown', e => {
     down = true;
     onMove(e);
     exhaust.start();
   });
 
-  window.addEventListener('touchmove', onMove);
+  canvas.addEventListener('mousemove', onMove);
 
-  window.addEventListener('touchend', () => {
+  canvas.addEventListener('mouseup', () => {
     down = false;
     exhaust.stop();
   });
 //}
 
 function onMove (e) {
-  mouse.x = (e.touches[0].clientX / window.innerWidth) - .5;
-  mouse.y = (e.touches[0].clientY / window.innerHeight) - .5;
+  mouse.x = (e.clientX / window.innerWidth) - .5;
+  mouse.y = (e.clientY / window.innerHeight) - .5;
 }
 
 function setOnboarding(id) {
