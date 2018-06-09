@@ -2,6 +2,8 @@
 
 A little game I wrote for a bit of self-education.
 
+Demo: http://kvasdopil.github.com/asteroids
+
 Note: currently the game is desktop-only.
 
 ## TODO ##
@@ -10,5 +12,3 @@ Note: currently the game is desktop-only.
 - add a nice bg texture
 - add an alternative weapon mode
 - add a ufo
-
-Demo: http://kvasdopil.github.com/asteroids
