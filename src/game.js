@@ -51,29 +51,58 @@ nextLevel();
 scene.registerBeforeRender(updateScene);
 engine.runRenderLoop(() => scene.render());
 
-const gizmo = BABYLON.MeshBuilder.CreateSphere('gizmo', { diameter: 2, segments: 1 }, scene);
+// const gizmo = BABYLON.MeshBuilder.CreateSphere('gizmo', { diameter: 2, segments: 1 }, scene);
 
-window.addEventListener("click", function (e) {
-  const x = (e.clientX / window.innerWidth) - .5;
-  const y = (e.clientY / window.innerHeight) - .5;
+let down = false;
+let mouse = {x:0, y: 0};
 
-  const tgt = new BABYLON.Vector3(MAX_X * x, - MAX_Y * y);
-
-  // ship.rotation. // z = x; // Math.asin(x);
-  // console.log(tgt);
-
-  // ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,-10 * x,0));
-  // ship.rotation.z = -1 * Math.sin(Math.PI / x);
-  // ship.rotation.z = Math.cos(Math.PI / x);
-
-  // new BABYLON.Vector3(x, y, 0);
-  gizmo.position.x = tgt.x;
-  gizmo.position.y = tgt.y;
-
-  // console.log(Math.atan(x / y));
-
-  // console.log(ship.rotationQuaternion);
+window.addEventListener("mousemove", function (e) {
+  mouse.x = (e.clientX / window.innerWidth) - .5;
+  mouse.y = (e.clientY / window.innerHeight) - .5;
 });
+
+window.onmousedown =  () => {
+  down = true;
+  console.log('d');
+};
+
+window.onmouseup = () => {
+  down = false;
+};
+
+// window.addEventListener("click", function (e) {
+//   const x = (e.clientX / window.innerWidth) - .5;
+//   const y = (e.clientY / window.innerHeight) - .5;
+
+//   const tgt = new BABYLON.Vector3((MAX_X * x) - ship.position.x, (- MAX_Y * y) - ship.position.y, 0);
+//   const tgtN = tgt.clone();
+//   tgtN.normalize();
+
+//   //console.log(tgt);
+// //  tgt.normalizeInPlace()
+
+//   // ship.rotation. // z = x; // Math.asin(x);
+//   // console.log(tgt);
+
+//   // ship.physicsImpostor.setAngularVelocity(new BABYLON.Quaternion(0,0,-10 * x,0));
+//   // ship.rotation.z = -1 * Math.sin(Math.PI / x);
+//   // ship.rotation.z = Math.cos(Math.PI / x);
+
+//   // new BABYLON.Vector3(x, y, 0);
+//   // gizmo.position.x = tgt.x;
+//   // gizmo.position.y = tgt.y;
+
+//   const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
+//   //ship.rotationQuaternion = rv;
+//   ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
+
+//   //const pitch = Math.asin(-tgt.y);
+//   //const yaw = Math.atan2(tgt.x, d.Z)
+
+//   // console.log(Math.atan(x / y));
+
+//   // console.log(ship.rotationQuaternion);
+// });
 
 function setOnboarding(id) {
   if (id === 'move') {
@@ -370,6 +399,17 @@ function updateScene() {
   if (keys[' ']) {
     keys[' '] = 0;
     createBall();
+  }
+
+  const tgt = new BABYLON.Vector3((MAX_X * mouse.x), (- MAX_Y * mouse.y), 0);
+
+  const tgtN = tgt.clone();
+  tgtN.normalize();
+
+  const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
+  ship.rotationQuaternion = rv;
+  if(down) {
+    ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
   }
 
   wrapped.map(obj => {
