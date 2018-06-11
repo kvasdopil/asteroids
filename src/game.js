@@ -6,10 +6,10 @@ let MAX_X = 100;
 let fov = 0;
 
 const scene = createScene(); //Call the createScene function
+window.addEventListener("resize", onResize);
 
 const fx = new window.Fx(scene);
 const gui = new window.Gui(scene);
-
 
 let level = -1;
 
@@ -24,23 +24,18 @@ var shipMaterial = new BABYLON.StandardMaterial("ship material", scene);
 ballMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
 
 const ship = createShip();
+const exhaust = fx.createExhaust(ship);
 ship.material = shipMaterial;
 
-const ufo = createUfo();
+let ufo = null;
 
-const exhaust = fx.createExhaust(ship);
-
-// ship.enablePhysics();
-
-let wrapped = [
-  ship
-];
-
+let oids = [];
 let balls = [];
 let gameOver = false;
 let overheat = 0;
 
-window.addEventListener("resize", onResize);
+createUfo();
+
 const keys = {};
 
 const firing = false;
@@ -164,11 +159,13 @@ function createShip() {
 }
 
 function createUfo() {
-  const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
+  ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
   ufo.position.x = 10;
   ufo.position.y = 10;
   ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
-  return ufo;
+
+  oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
+  balls.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo));
 }
 
 function createAsteroid(diameter) {
@@ -237,7 +234,15 @@ function onAsteroidHitUfo(me, other) {
     scene.removeMesh(ufo);
 
     setTimeout(() => scene.getPhysicsEngine().removeImpostor(ufo), 0);
+
+    setTimeout(createUfo, 3000);
   }, 1000);
+}
+
+function onBallHitUfo(me, other) {
+  me.object.ttl = 0;
+  fx.createBallExplosion(me.object.position.clone());
+  onAsteroidHitUfo(me, other);
 }
 
 function createBall() {
@@ -273,7 +278,8 @@ function createBall() {
 
   ball.fire = fire;
 
-  ball.physicsImpostor.registerOnPhysicsCollide(wrapped.map(w => w.physicsImpostor), onBallHitAsteroid);
+  ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
+  ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
 }
 
 function onBallHitAsteroid(me, other) {
@@ -296,7 +302,7 @@ function crackAsteroid(oid) {
 
   scene.removeMesh(oid);
   setTimeout(() => scene.getPhysicsEngine().removeImpostor(oid.physicsImpostor), 0);
-  wrapped = wrapped.filter(i => i !== oid);
+  oids = oids.filter(i => i !== oid);
 
   const v1 = new BABYLON.Vector3(Math.random(), Math.random(), 0).normalize();
 
@@ -314,9 +320,9 @@ function crackAsteroid(oid) {
       a1.gen = oid.gen + 1;
       a2.gen = oid.gen + 1;
       a3.gen = oid.gen + 1;
-      wrapped.push(a1);
-      wrapped.push(a2);
-      wrapped.push(a3);
+      oids.push(a1);
+      oids.push(a2);
+      oids.push(a3);
 
       balls.map(ball => ball.physicsImpostor.registerOnPhysicsCollide([a1, a2, a3].map(w => w.physicsImpostor), onBallHitAsteroid));
     } else {
@@ -328,8 +334,8 @@ function crackAsteroid(oid) {
 
       a1.gen = oid.gen + 1;
       a2.gen = oid.gen + 1;
-      wrapped.push(a1);
-      wrapped.push(a2);
+      oids.push(a1);
+      oids.push(a2);
 
       balls.map(ball => ball.physicsImpostor.registerOnPhysicsCollide([a1, a2].map(w => w.physicsImpostor), onBallHitAsteroid));
     }
@@ -339,7 +345,7 @@ function crackAsteroid(oid) {
 
   fx.createOidExplosion(v1, oid.position);
 
-  if(wrapped.length === 1) { // all asteroids gone
+  if(oids.length === 0) { // all asteroids gone
     nextLevel();
   }
 }
@@ -351,7 +357,7 @@ function nextLevel() {
   }
   for(i=0; i<Math.pow(2, level); i++) {
     const oid = createAsteroid(Math.random() * 8 + 1);
-    wrapped.push(oid);
+    oids.push(oid);
   }
 }
 
@@ -463,9 +469,12 @@ function updateScene() {
   shipMaterial.diffuseColor.b = 1 - (overheat / 10);
   shipMaterial.emissiveColor.r = (overheat / 10);
 
-  wrapped.map(wrap);
+  oids.map(wrap);
   balls.map(wrap);
-  wrap(ufo);
+  if (ufo) {
+    wrap(ufo);
+  }
+  wrap(ship);
 
   balls.filter(ball => ball.ttl <= now).map(ball => {
     scene.removeMesh(ball);
