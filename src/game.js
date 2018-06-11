@@ -280,7 +280,7 @@ function createBall() {
   ball.ttl = new Date().getTime() + 1000;
   balls.push(ball);
 
-  const fire = fx.createFire(ball);
+  const fire = fx.createShipBall(ball);
 
   ball.fire = fire;
 
@@ -292,7 +292,7 @@ function createUfoBall() {
   const tgt = ship.position.subtract(ufo.position);
   tgt.normalize();
 
-  const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
+  const ball = BABYLON.MeshBuilder.CreateBox('ball', { size: 0.1 }, scene);
   ball.material = ballMaterial;
   ball.position = tgt.scale(2).add(ufo.position);
 
@@ -300,7 +300,7 @@ function createUfoBall() {
   ball.physicsImpostor.applyImpulse(tgt.scale(50), ball.getAbsolutePosition());
   // tgt.multiplyInPlace(2).addInPlace(ufo.position); // tgt.multiply(2).add(ufo.position);
 
-  const fire = fx.createFire(ball);
+  const fire = fx.createUfoBall(ball);
   ball.fire = fire;
 
   ball.ttl = new Date().getTime() + 1000;

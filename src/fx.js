@@ -11,6 +11,11 @@ class Fx {
     exhaust.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
     exhaust.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
     exhaust.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+
+    // exhaust.color1 = new BABYLON.Color4(1.0, 1.0, 0.0, 1.0),
+    // exhaust.color1 = new BABYLON.Color4(1.0, 0.0, 0.5, 1.0),
+    // exhaust.colorDead = new BABYLON.Color4(0.2, 0.0, 0.0, 0.0),
+
     exhaust.minSize = 0.1;
     exhaust.maxSize = 0.5;
     exhaust.minLifeTime = 0;
@@ -126,13 +131,13 @@ class Fx {
     explosion.start();
   }
 
-  createFire(target) {
-    const fire = new BABYLON.ParticleSystem("exhaust", 2000, scene);
+  createColorBall(target, c1, c2, c3) {
+    const fire = new BABYLON.ParticleSystem("ball", 2000, scene);
     fire.particleTexture = this.flareTexture;
 
-    fire.color1 = new BABYLON.Color4(0, 0.8, 1.0, 1.0);
-    fire.color2 = new BABYLON.Color4(0, 0.5, 1.0, 1.0);
-    fire.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+    fire.color1 = c1;
+    fire.color2 = c2;
+    fire.colorDead = c3;
     fire.minSize = 0.1;
     fire.maxSize = 1.5;
     fire.minLifeTime = 0;
@@ -153,6 +158,24 @@ class Fx {
     fire.start();
 
     return fire;
+  }
+
+  createShipBall(target) {
+    return this.createColorBall(
+      target,
+      new BABYLON.Color4(0.0, 0.8, 1.0, 1.0),
+      new BABYLON.Color4(0.0, 0.5, 1.0, 1.0),
+      new BABYLON.Color4(0.0, 0.0, 0.2, 0.0),
+    );
+  }
+
+  createUfoBall(target) {
+    return this.createColorBall(
+      target,
+      new BABYLON.Color4(0.0, 1.0, 0.0, 1.0),
+      new BABYLON.Color4(0.5, 1.0, 0.5, 1.0),
+      new BABYLON.Color4(0.0, 0.2, 0.0, 0.0),
+    );
   }
 }
 
