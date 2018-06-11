@@ -10,11 +10,8 @@ const scene = createScene(); //Call the createScene function
 const fx = new window.Fx(scene);
 const gui = new window.Gui(scene);
 
-const ship = createShip();
 
 let level = -1;
-
-const exhaust = fx.createExhaust(ship);
 
 var oidMaterial = new BABYLON.StandardMaterial("asteroid material", scene);
 oidMaterial.diffuseColor = new BABYLON.Color3(.5, .5, .5);
@@ -22,6 +19,14 @@ oidMaterial.wireframe = true;
 
 var ballMaterial = new BABYLON.StandardMaterial("ball material", scene);
 ballMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+
+var shipMaterial = new BABYLON.StandardMaterial("ship material", scene);
+ballMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+const ship = createShip();
+ship.material = shipMaterial;
+
+const exhaust = fx.createExhaust(ship);
 
 // ship.enablePhysics();
 
@@ -31,6 +36,7 @@ let wrapped = [
 
 let balls = [];
 let gameOver = false;
+let overheat = 0;
 
 window.addEventListener("resize", onResize);
 const keys = {};
@@ -158,11 +164,20 @@ function createShip() {
 function createAsteroid(diameter) {
   const oid = BABYLON.MeshBuilder.CreateSphere(`oid`, { diameter, segments: 2 }, scene);
   oid.gen = 0;
-  oid.position = new BABYLON.Vector3(
-    Math.random() * 80 - 40,
-    Math.random() * 80 - 40,
-    0
-  );
+
+  while(true) {
+    oid.position = new BABYLON.Vector3(
+      Math.random() * 80 - 40,
+      Math.random() * 80 - 40,
+      0
+    );
+    if(BABYLON.Vector3.Distance(oid.position, ship.position) < 10) {
+      continue;
+    }
+
+    break;
+  }
+
   oid.physicsImpostor = new BABYLON.PhysicsImpostor(oid, BABYLON.PhysicsImpostor.SphereImpostor, { mass: diameter * diameter, restitution: 0.1 }, scene);
   const force = new BABYLON.Vector3(
     100 * (Math.random() * 2 - 1),
@@ -371,8 +386,20 @@ function onKeyUp({key}) {
     exhaust.stop();
 }
 
+function fire() {
+  if (overheat >= 10) {
+    return;
+  }
+
+  createBall();
+  overheat += 1;
+}
+
+let prev = 0;
 function updateScene() {
   const now = new Date().getTime();
+
+  overheat = Math.max(0, overheat - (now - prev) / 1000);
 
   if (keys.ArrowUp && !gameOver) {
     const q = ship.rotationQuaternion.toEulerAngles();
@@ -386,19 +413,12 @@ function updateScene() {
 
   if (keys[' ']) {
     keys[' '] = 0;
-    createBall();
+    fire();
   }
 
-  // const tgt = new BABYLON.Vector3((MAX_X * mouse.x) - ship.position.x, (- MAX_Y * mouse.y) - ship.position.y, 0);
-
-  // const tgtN = tgt.clone();
-  // tgtN.normalize();
-
-  // const rv = new BABYLON.Quaternion.RotationYawPitchRoll(0, 0, Math.atan2(- tgtN.x, tgtN.y));
-  // ship.rotationQuaternion = rv;
-  // if(down) {
-  //   ship.physicsImpostor.applyImpulse(tgtN, ship.getAbsolutePosition());
-  // }
+  shipMaterial.diffuseColor.g = 1 - (overheat / 10);
+  shipMaterial.diffuseColor.b = 1 - (overheat / 10);
+  shipMaterial.emissiveColor.r = (overheat / 10);
 
   wrapped.map(obj => {
     if(obj.position.x > MAX_X / 2) {
@@ -441,11 +461,11 @@ function updateScene() {
   })
 
   balls.filter(ball => ball.ttl <= now).map(ball => {
-    console.log('ball ttl done');
-    //ball.physicsImpostor = null;
     scene.removeMesh(ball);
     ball.fire.stop();
     setTimeout(() => scene.getPhysicsEngine().removeImpostor(ball.physicsImpostor), 0);
   });
   balls = balls.filter(ball => ball.ttl > now);
+
+  prev = now;
 };
