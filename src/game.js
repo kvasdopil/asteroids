@@ -166,6 +166,7 @@ function createUfo() {
 
   oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
   balls.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo));
+  ship.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onShipHitUfo);
 }
 
 function createAsteroid(diameter) {
@@ -242,6 +243,11 @@ function onAsteroidHitUfo(me, other) {
 function onBallHitUfo(me, other) {
   me.object.ttl = 0;
   fx.createBallExplosion(me.object.position.clone());
+  onAsteroidHitUfo(me, other);
+}
+
+function onShipHitUfo(me, other) {
+  onAsteroidHitShip(other, me);
   onAsteroidHitUfo(me, other);
 }
 
