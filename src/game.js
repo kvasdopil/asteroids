@@ -300,6 +300,9 @@ function onBallHitShip(me, other) {
 
 function onBallHitUfo(me, other) {
   me.object.ttl = 0;
+
+  gui.addScore(500);
+
   fx.createBallExplosion(me.object.position.clone());
   onAsteroidHitUfo(me, other);
 }
