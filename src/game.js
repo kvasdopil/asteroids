@@ -198,7 +198,8 @@ async function ufoAi() {
         const distance_in_sec = heading.length() / BALL_SPEED;
         if (distance_in_sec < BALL_TTL / 1000) {
           const tgtvel = ship.physicsImpostor.getLinearVelocity().scale(distance_in_sec);
-          const ball = createBall(heading.add(tgtvel), ufo);
+          const myvel = ufo.physicsImpostor.getLinearVelocity().scale(distance_in_sec);
+          const ball = createBall(heading.add(tgtvel).subtract(myvel), ufo);
           ball.fire = fx.createUfoBall(ball);
         }
       }
