@@ -288,6 +288,25 @@ function createBall() {
   ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
 }
 
+function createUfoBall() {
+  const tgt = ship.position.subtract(ufo.position);
+  tgt.normalize();
+
+  const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
+  ball.material = ballMaterial;
+  ball.position = tgt.scale(2).add(ufo.position);
+
+  ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+  ball.physicsImpostor.applyImpulse(tgt.scale(50), ball.getAbsolutePosition());
+  // tgt.multiplyInPlace(2).addInPlace(ufo.position); // tgt.multiply(2).add(ufo.position);
+
+  const fire = fx.createFire(ball);
+  ball.fire = fire;
+
+  ball.ttl = new Date().getTime() + 1000;
+  balls.push(ball);
+}
+
 function onBallHitAsteroid(me, other) {
   me.object.ttl = 0;
   crackAsteroid(other.object);
@@ -426,6 +445,7 @@ function fire() {
   }
 
   createBall();
+  createUfoBall();
   overheat += 1;
 }
 
