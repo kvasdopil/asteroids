@@ -1,4 +1,4 @@
-const BALL_SPEED = 50;
+const BALL_SPEED = 40;
 const BALL_RECOIL = 1;
 const BALL_TTL = 1000;
 
@@ -28,6 +28,12 @@ ballMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
 
 var shipMaterial = new BABYLON.StandardMaterial("ship material", scene);
 ballMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+var shieldMaterial = new BABYLON.StandardMaterial("shield material", scene);
+shieldMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+shieldMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 1.0);
+// shieldMaterial.wireframe = true;
+shieldMaterial.alpha = 0.5;
 
 const ship = createShip();
 const exhaust = fx.createExhaust(ship);
@@ -161,6 +167,12 @@ function createScene() {
 function createShip() {
   const ship = BABYLON.MeshBuilder.CreateCylinder("ship", {diameterTop: 0, diameterBottom: 1, tesselation: 4, height: 2}, scene);
   ship.physicsImpostor = new BABYLON.PhysicsImpostor(ship, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+
+  const shield = BABYLON.MeshBuilder.CreateSphere("shield", {diameter: 3, segments: 4}, scene);
+  shield.material = shieldMaterial;
+  shield.rotation.y = Math.PI;
+
+  ship.addChild(shield);
   return ship;
 }
 
