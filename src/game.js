@@ -214,7 +214,7 @@ function onAsteroidHitShip(me, other) {
 
   //exhaust.stop();
 
-  const explosion = fx.createExplosion(ship);
+  const explosion = fx.createShipExplosion(ship);
 
   other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
   exhaust.start();
@@ -228,7 +228,7 @@ function onAsteroidHitShip(me, other) {
 }
 
 function onAsteroidHitUfo(me, other) {
-  const explosion = fx.createExplosion(ufo);
+  const explosion = fx.createUfoExplosion(ufo);
   other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
 
   setTimeout(() => {

@@ -81,13 +81,32 @@ class Fx {
     explosion.start();
   }
 
-  createExplosion(target) {
+  createUfoExplosion(target) {
+    return this.createColorExplosion(
+      target,
+      new BABYLON.Color4(0.8, 1.0, 0.8, 1.0),
+      new BABYLON.Color4(0.5, 1.0, 0.5, 1.0),
+      new BABYLON.Color4(0.2, 0.1, 0.0, 0.0),
+    );
+  }
+
+  createShipExplosion(target) {
+    return this.createColorExplosion(
+      target,
+      new BABYLON.Color4(1.0, 0.8, 1.0, 1.0),
+      new BABYLON.Color4(1.0, 0.5, 1.0, 1.0),
+      new BABYLON.Color4(0.0, 0.0, 0.2, 0.0),
+    );
+  }
+
+  createColorExplosion(target, c1, c2, c3) {
     const explosion = new BABYLON.ParticleSystem("explosion", 2000, this.scene);
     explosion.particleTexture = this.flareTexture;
 
-    explosion.color1 = new BABYLON.Color4(1, 0.8, 1.0, 1.0);
-    explosion.color2 = new BABYLON.Color4(1, 0.5, 1.0, 1.0);
-    explosion.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+    explosion.color1 = c1;
+    explosion.color2 = c2;
+    explosion.colorDead = c3;
+
     explosion.minSize = 0.4;
     explosion.maxSize = 1.3;
     explosion.minLifeTime = 0;
