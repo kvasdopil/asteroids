@@ -288,7 +288,17 @@ function createBall() {
 }
 
 function createUfoBall() {
-  const tgt = ship.position.subtract(ufo.position);
+  const BALL_SPEED = 50;
+  const RECOIL = 1;
+
+  //const tgt = ship.positip.subtract(ufo.position);
+  //tgt.normalize();
+
+  const distance_in_sec = ship.position.subtract(ufo.position).length() / BALL_SPEED;
+  const tgtvel = ship.physicsImpostor.getLinearVelocity().scale(distance_in_sec);
+  //console.log(distance_in_sec);
+
+  const tgt = ship.position.add(tgtvel).subtract(ufo.position);
   tgt.normalize();
 
   const ball = BABYLON.MeshBuilder.CreateBox('ball', { size: 0.1 }, scene);
@@ -297,8 +307,8 @@ function createUfoBall() {
   ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
   ball.physicsImpostor.applyImpulse(ufo.physicsImpostor.getLinearVelocity(), ball.getAbsolutePosition());
-  ball.physicsImpostor.applyImpulse(tgt.scale(50), ball.getAbsolutePosition());
-  ufo.physicsImpostor.applyImpulse(tgt.scale(-1), ufo.getAbsolutePosition());
+  ball.physicsImpostor.applyImpulse(tgt.scale(BALL_SPEED), ball.getAbsolutePosition());
+  ufo.physicsImpostor.applyImpulse(tgt.scale(-1 * RECOIL), ufo.getAbsolutePosition());
 
   ball.ttl = new Date().getTime() + 1000;
   balls.push(ball);
