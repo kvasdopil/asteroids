@@ -252,36 +252,28 @@ function onShipHitUfo(me, other) {
 }
 
 function createBall() {
-  const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
-  ball.material = ballMaterial;
   const q = ship.rotationQuaternion.toEulerAngles();
 
-  ball.position = ship.position.clone();
-  ball.position.x += 2 * Math.sin(q.z) * -1;
-  ball.position.y += 2 * Math.cos(q.z);
+  const tgt = new BABYLON.Vector3(
+    Math.sin(q.z) * -1,
+    Math.cos(q.z),
+    0,
+  );
+  tgt.normalize();
+
+  const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
+  ball.position = tgt.scale(2).add(ship.position);
 
   ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
-  const force = new BABYLON.Vector3(
-    50 * Math.sin(q.z) * -1,
-    50 * Math.cos(q.z),
-    0,
-  ).add(ship.physicsImpostor.getLinearVelocity()); // .add(ship.velocity);
-
-  const force2 = new BABYLON.Vector3(
-    -1 * Math.sin(q.z) * -1,
-    -1 * Math.cos(q.z),
-    0,
-  );
-
-  ball.physicsImpostor.applyImpulse(force, ball.getAbsolutePosition());
-  ship.physicsImpostor.applyImpulse(force2, ship.getAbsolutePosition());
+  ball.physicsImpostor.applyImpulse(ship.physicsImpostor.getLinearVelocity(), ball.getAbsolutePosition());
+  ball.physicsImpostor.applyImpulse(tgt.scale(50), ball.getAbsolutePosition());
+  ship.physicsImpostor.applyImpulse(tgt.scale(-1), ship.getAbsolutePosition());
 
   ball.ttl = new Date().getTime() + 1000;
   balls.push(ball);
 
   const fire = fx.createShipBall(ball);
-
   ball.fire = fire;
 
   ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
@@ -293,18 +285,22 @@ function createUfoBall() {
   tgt.normalize();
 
   const ball = BABYLON.MeshBuilder.CreateBox('ball', { size: 0.1 }, scene);
-  ball.material = ballMaterial;
   ball.position = tgt.scale(2).add(ufo.position);
 
   ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+
+  ball.physicsImpostor.applyImpulse(ufo.physicsImpostor.getLinearVelocity(), ball.getAbsolutePosition());
   ball.physicsImpostor.applyImpulse(tgt.scale(50), ball.getAbsolutePosition());
-  // tgt.multiplyInPlace(2).addInPlace(ufo.position); // tgt.multiply(2).add(ufo.position);
+  ufo.physicsImpostor.applyImpulse(tgt.scale(-1), ufo.getAbsolutePosition());
+
+  ball.ttl = new Date().getTime() + 1000;
+  balls.push(ball);
 
   const fire = fx.createUfoBall(ball);
   ball.fire = fire;
 
-  ball.ttl = new Date().getTime() + 1000;
-  balls.push(ball);
+  ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
+  ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
 }
 
 function onBallHitAsteroid(me, other) {
