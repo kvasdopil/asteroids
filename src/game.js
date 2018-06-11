@@ -26,6 +26,8 @@ ballMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
 const ship = createShip();
 ship.material = shipMaterial;
 
+const ufo = createUfo();
+
 const exhaust = fx.createExhaust(ship);
 
 // ship.enablePhysics();
@@ -161,6 +163,14 @@ function createShip() {
   return ship;
 }
 
+function createUfo() {
+  const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
+  ufo.position.x = 10;
+  ufo.position.y = 10;
+  ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
+  return ufo;
+}
+
 function createAsteroid(diameter) {
   const oid = BABYLON.MeshBuilder.CreateSphere(`oid`, { diameter, segments: 2 }, scene);
   oid.gen = 0;
@@ -196,6 +206,7 @@ function createAsteroid(diameter) {
   oid.diameter = diameter;
 
   oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onAsteroidHitShip);
+  oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo);
   return oid;
 }
 
@@ -215,6 +226,17 @@ function onAsteroidHitShip(me, other) {
     scene.removeMesh(ship);
 
     setTimeout(() => scene.getPhysicsEngine().removeImpostor(other), 0);
+  }, 1000);
+}
+
+function onAsteroidHitUfo(me, other) {
+  const explosion = fx.createExplosion(ufo);
+  other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
+
+  setTimeout(() => {
+    scene.removeMesh(ufo);
+
+    setTimeout(() => scene.getPhysicsEngine().removeImpostor(ufo), 0);
   }, 1000);
 }
 
@@ -396,6 +418,27 @@ function fire() {
 }
 
 let prev = 0;
+
+function wrap(obj) {
+  if(obj.position.x > MAX_X / 2) {
+    obj.position.x -= MAX_X;
+  }
+
+  if(obj.position.x < -MAX_X / 2) {
+    obj.position.x += MAX_X;
+  }
+
+  if(obj.position.y > MAX_Y / 2) {
+    obj.position.y -= MAX_Y;
+  }
+
+  if(obj.position.y < -MAX_Y / 2) {
+    obj.position.y += MAX_Y;
+  }
+
+  obj.position.z = 0;
+}
+
 function updateScene() {
   const now = new Date().getTime();
 
@@ -420,45 +463,9 @@ function updateScene() {
   shipMaterial.diffuseColor.b = 1 - (overheat / 10);
   shipMaterial.emissiveColor.r = (overheat / 10);
 
-  wrapped.map(obj => {
-    if(obj.position.x > MAX_X / 2) {
-      obj.position.x -= MAX_X;
-    }
-
-    if(obj.position.x < -MAX_X / 2) {
-      obj.position.x += MAX_X;
-    }
-
-    if(obj.position.y > MAX_Y / 2) {
-      obj.position.y -= MAX_Y;
-    }
-
-    if(obj.position.y < -MAX_Y / 2) {
-      obj.position.y += MAX_Y;
-    }
-
-    obj.position.z = 0;
-  })
-
-  balls.map(obj => {
-    if(obj.position.x > MAX_X / 2) {
-      obj.position.x -= MAX_X;
-    }
-
-    if(obj.position.x < -MAX_X / 2) {
-      obj.position.x += MAX_X;
-    }
-
-    if(obj.position.y > MAX_Y / 2) {
-      obj.position.y -= MAX_Y;
-    }
-
-    if(obj.position.y < -MAX_Y / 2) {
-      obj.position.y += MAX_Y;
-    }
-
-    obj.position.z = 0;
-  })
+  wrapped.map(wrap);
+  balls.map(wrap);
+  wrap(ufo);
 
   balls.filter(ball => ball.ttl <= now).map(ball => {
     scene.removeMesh(ball);
