@@ -166,8 +166,8 @@ function createShip() {
 
 function createUfo() {
   const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
-  ufo.position.x = (Math.random() * 2 - 1) * MAX_X;
-  ufo.position.y = (Math.random() * 2 - 1) * MAX_Y;
+  ufo.position.x = (Math.random() - 0.5) * MAX_X;
+  ufo.position.y = (Math.random() - 0.5) * MAX_Y;
   ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
   oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
@@ -190,7 +190,23 @@ async function ufoAi() {
         break;
       }
 
-      const heading = ship.position.subtract(ufo.position); // fixme: calculate a shorter heading
+      // calculate the closest heading taking screen wrap into account
+      let heading = ship.position.subtract(ufo.position);
+      const headings = [
+        heading.add(new BABYLON.Vector3(MAX_X, 0, 0)),
+        heading.add(new BABYLON.Vector3(-MAX_X, 0, 0)),
+        heading.add(new BABYLON.Vector3(0, MAX_Y, 0)),
+        heading.add(new BABYLON.Vector3(0, -MAX_Y, 0)),
+      ];
+      let len = heading.length();
+      headings.map((h, i) => {
+        const l = h.length();
+        if (len > l) {
+          heading = h;
+          len = l;
+        }
+      });
+
       if (Math.random() > 0.5) {
         heading.normalize();
         ufo.physicsImpostor.applyImpulse(heading.scale(1), ufo.getAbsolutePosition());
