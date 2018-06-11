@@ -1,3 +1,5 @@
+const sleep = wait => new Promise(resolve => setTimeout(resolve, wait));
+
 var canvas = document.getElementById("renderCanvas"); // Get the canvas element
 var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
@@ -34,7 +36,7 @@ let balls = [];
 let gameOver = false;
 let overheat = 0;
 
-createUfo();
+ufoAi();
 
 const keys = {};
 
@@ -159,7 +161,7 @@ function createShip() {
 }
 
 function createUfo() {
-  ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
+  const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
   ufo.position.x = 10;
   ufo.position.y = 10;
   ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
@@ -167,6 +169,30 @@ function createUfo() {
   oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
   balls.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo));
   ship.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onShipHitUfo);
+
+  ufo.physicsImpostor.applyImpulse(new BABYLON.Vector3(3, 0, 0), ufo.getAbsolutePosition());
+
+  return ufo;
+}
+
+async function ufoAi() {
+  while (true) {
+    const theUfo = createUfo();
+    ufo = theUfo;
+
+    while (true) {
+      await sleep(Math.floor(Math.random() * 3000));
+      if (!ufo) {
+        break;
+      }
+
+      createUfoBall();
+    }
+    scene.removeMesh(theUfo);
+    setTimeout(() => scene.getPhysicsEngine().removeImpostor(theUfo.physicsImpostor), 0);
+
+    await sleep(3000);
+  }
 }
 
 function createAsteroid(diameter) {
@@ -231,13 +257,7 @@ function onAsteroidHitUfo(me, other) {
   const explosion = fx.createUfoExplosion(ufo);
   other.setAngularVelocity(new BABYLON.Quaternion(0,0,10,0));
 
-  setTimeout(() => {
-    scene.removeMesh(ufo);
-
-    setTimeout(() => scene.getPhysicsEngine().removeImpostor(ufo), 0);
-
-    setTimeout(createUfo, 3000);
-  }, 1000);
+  ufo = false;
 }
 
 function onBallHitShip(me, other) {
@@ -459,7 +479,6 @@ function fire() {
   }
 
   createBall();
-  createUfoBall();
   overheat += 1;
 }
 
