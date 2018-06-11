@@ -240,6 +240,12 @@ function onAsteroidHitUfo(me, other) {
   }, 1000);
 }
 
+function onBallHitShip(me, other) {
+  me.object.ttl = 0;
+  fx.createBallExplosion(me.object.position.clone());
+  onAsteroidHitShip(me, other);
+}
+
 function onBallHitUfo(me, other) {
   me.object.ttl = 0;
   fx.createBallExplosion(me.object.position.clone());
@@ -278,6 +284,7 @@ function createBall() {
 
   ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
   ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
+  ball.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onBallHitShip);
 }
 
 function createUfoBall() {
@@ -301,6 +308,7 @@ function createUfoBall() {
 
   ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
   ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
+  ball.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onBallHitShip);
 }
 
 function onBallHitAsteroid(me, other) {
