@@ -177,6 +177,9 @@ async function ufoAi() {
     ufo = theUfo;
     ufo.level = ufolevel;
 
+
+     console.log('level', ufolevel, ufo.level);
+
     while (true) {
       await sleep(Math.floor(Math.random() * UFO_WAIT_TIME));
       if (!ufo) {
@@ -325,7 +328,9 @@ function onBallHitShip(me, other) {
 function onBallHitUfo(me, other) {
   me.object.ttl = 0;
 
-  gui.addScore(500 + ufo.level * 100);
+  if (ufo.level) {
+    gui.addScore(500 + ufo.level * 100);
+  }
 
   fx.createBallExplosion(me.object.position.clone());
   onAsteroidHitUfo(me, other);
