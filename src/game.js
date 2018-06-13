@@ -6,6 +6,9 @@ const UFO_MIN_RESPAWN = 3000;
 const UFO_MAX_RESPAWN = 6000;
 const UFO_WAIT_TIME = 1500;
 
+const SHIELD_RECHARGE_TIME = 10000;
+const MAX_OVERHEAT = 10;
+
 const sleep = wait => new Promise(resolve => setTimeout(resolve, wait));
 
 var canvas = document.getElementById("renderCanvas"); // Get the canvas element
@@ -71,40 +74,6 @@ nextLevel();
 
 scene.registerBeforeRender(updateScene);
 engine.runRenderLoop(() => scene.render());
-
-// let down = false;
-// let mouse = {x:0, y: 0};
-
-// document.addEventListener('gesturestart', function (e) {
-//     e.preventDefault();
-// });
-
-// document.addEventListener('touchmove', function(event) {
-//   event = event.originalEvent || event;
-//   if(event.scale > 1) {
-//     event.preventDefault();
-//   }
-// }, false);
-
-// //if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-//   canvas.addEventListener('mousedown', e => {
-//     down = true;
-//     onMove(e);
-//     exhaust.start();
-//   });
-
-//   canvas.addEventListener('mousemove', onMove);
-
-//   canvas.addEventListener('mouseup', () => {
-//     down = false;
-//     exhaust.stop();
-//   });
-// //}
-
-// function onMove (e) {
-//   mouse.x = (e.clientX / window.innerWidth) - .5;
-//   mouse.y = (e.clientY / window.innerHeight) - .5;
-// }
 
 function setOnboarding(id) {
   if (id === 'move') {
@@ -524,7 +493,7 @@ function onKeyUp({key}) {
 }
 
 function fire() {
-  if (overheat >= 10) {
+  if (overheat >= MAX_OVERHEAT) {
     return;
   }
 
@@ -569,7 +538,7 @@ function updateScene() {
 
   if (!gameOver) {
     if (!shield) {
-      if (now - lastHit > 10000) {
+      if (now - lastHit > SHIELD_RECHARGE_TIME) {
         enableShield();
       }
     }
@@ -592,9 +561,9 @@ function updateScene() {
     fire();
   }
 
-  shipMaterial.diffuseColor.g = 1 - (overheat / 10);
-  shipMaterial.diffuseColor.b = 1 - (overheat / 10);
-  shipMaterial.emissiveColor.r = (overheat / 10);
+  shipMaterial.diffuseColor.g = 1 - (overheat / MAX_OVERHEAT);
+  shipMaterial.diffuseColor.b = 1 - (overheat / MAX_OVERHEAT);
+  shipMaterial.emissiveColor.r = (overheat / MAX_OVERHEAT);
 
   oids.map(wrap);
   balls.map(wrap);
