@@ -2,6 +2,10 @@ const BALL_SPEED = 40;
 const BALL_RECOIL = 1;
 const BALL_TTL = 1000;
 
+const UFO_MIN_RESPAWN = 3000;
+const UFO_MAX_RESPAWN = 6000;
+const UFO_WAIT_TIME = 1500;
+
 const sleep = wait => new Promise(resolve => setTimeout(resolve, wait));
 
 var canvas = document.getElementById("renderCanvas"); // Get the canvas element
@@ -33,7 +37,9 @@ var shieldMaterial = new BABYLON.StandardMaterial("shield material", scene);
 shieldMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
 shieldMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 1.0);
 // shieldMaterial.wireframe = true;
-shieldMaterial.alpha = 0.5;
+shieldMaterial.alpha = 0;
+
+enableShield();
 
 const ship = createShip();
 const exhaust = fx.createExhaust(ship);
@@ -196,16 +202,20 @@ async function ufoAi() {
   let ufolevel = 0;
   while (true) {
     // await sleep(15000 + Math.floor(Math.random() * 15000));
-    await sleep(3000);
+    await sleep(UFO_MIN_RESPAWN + Math.floor(Math.random() * (UFO_MAX_RESPAWN - UFO_MIN_RESPAWN)));
 
     const theUfo = createUfo();
     ufo = theUfo;
     ufo.level = ufolevel;
 
     while (true) {
-      await sleep(Math.floor(Math.random() * 1500));
+      await sleep(Math.floor(Math.random() * UFO_WAIT_TIME));
       if (!ufo) {
         break;
+      }
+
+      if (gameOver) {
+        continue;
       }
 
       // calculate the closest heading taking screen wrap into account
@@ -289,7 +299,23 @@ function createAsteroid(diameter) {
   return oid;
 }
 
+function disableShield() {
+  lastHit = new Date().getTime();
+  shieldMaterial.alpha = 0;
+  shield = false;
+}
+
+function enableShield() {
+  shieldMaterial.alpha = 0.5;
+  shield = true;
+}
+
 function onAsteroidHitShip(me, other) {
+  if (shield) {
+    disableShield();
+    return;
+  }
+
   gameOver = true;
   setOnboarding('dead');
 
@@ -318,6 +344,12 @@ function onAsteroidHitUfo(me, other) {
 function onBallHitShip(me, other) {
   me.object.ttl = 0;
   fx.createBallExplosion(me.object.position.clone());
+
+  if (shield) {
+    disableShield();
+    return;
+  }
+
   onAsteroidHitShip(me, other);
 }
 
@@ -534,6 +566,14 @@ function wrap(obj) {
 
 function updateScene() {
   const now = new Date().getTime();
+
+  if (!gameOver) {
+    if (!shield) {
+      if (now - lastHit > 10000) {
+        enableShield();
+      }
+    }
+  }
 
   overheat = Math.max(0, overheat - (now - prev) / 1000);
 
