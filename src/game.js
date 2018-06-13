@@ -166,8 +166,10 @@ function createShip() {
 
 function createUfo() {
   const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
+
   ufo.position.x = (Math.random() - 0.5) * MAX_X;
   ufo.position.y = (Math.random() - 0.5) * MAX_Y;
+
   ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
   oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
@@ -175,14 +177,18 @@ function createUfo() {
   ship.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onShipHitUfo);
 
   ufo.physicsImpostor.applyImpulse(new BABYLON.Vector3(3, 0, 0), ufo.getAbsolutePosition());
-
   return ufo;
 }
 
 async function ufoAi() {
+  let ufolevel = 0;
   while (true) {
+    // await sleep(15000 + Math.floor(Math.random() * 15000));
+    await sleep(3000);
+
     const theUfo = createUfo();
     ufo = theUfo;
+    ufo.level = ufolevel;
 
     while (true) {
       await sleep(Math.floor(Math.random() * 1500));
@@ -211,19 +217,22 @@ async function ufoAi() {
         heading.normalize();
         ufo.physicsImpostor.applyImpulse(heading.scale(1), ufo.getAbsolutePosition());
       } else {
-        const distance_in_sec = heading.length() / BALL_SPEED;
+        const ball_speed = BALL_SPEED / 2 + level*2;
+        const error = Math.max(0, 3 - level/3);
+        const distance_in_sec = heading.length() / ball_speed;
+
         if (distance_in_sec < BALL_TTL / 1000) {
           const tgtvel = ship.physicsImpostor.getLinearVelocity().scale(distance_in_sec);
           const myvel = ufo.physicsImpostor.getLinearVelocity().scale(distance_in_sec);
-          const ball = createBall(heading.add(tgtvel).subtract(myvel), ufo);
+          const err = new BABYLON.Vector3(error * (Math.random() * 2 - 1), error * (Math.random() * 2 - 1), 0);
+          const ball = createBall(heading.add(tgtvel).subtract(myvel).add(err), ufo, ball_speed);
           ball.fire = fx.createUfoBall(ball);
         }
       }
     }
+    ufolevel++;
     scene.removeMesh(theUfo);
     setTimeout(() => scene.getPhysicsEngine().removeImpostor(theUfo.physicsImpostor), 0);
-
-    await sleep(3000);
   }
 }
 
@@ -262,7 +271,9 @@ function createAsteroid(diameter) {
   oid.diameter = diameter;
 
   oid.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onAsteroidHitShip);
-  oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo);
+  if(ufo) {
+    oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo);
+  }
   return oid;
 }
 
@@ -301,7 +312,7 @@ function onBallHitShip(me, other) {
 function onBallHitUfo(me, other) {
   me.object.ttl = 0;
 
-  gui.addScore(500);
+  gui.addScore(500 + ufo.level * 100);
 
   fx.createBallExplosion(me.object.position.clone());
   onAsteroidHitUfo(me, other);
@@ -312,7 +323,7 @@ function onShipHitUfo(me, other) {
   onAsteroidHitUfo(me, other);
 }
 
-function createBall(tgt, owner) {
+function createBall(tgt, owner, speed) {
   tgt.normalize();
 
   const ball = BABYLON.MeshBuilder.CreateBox(`ball`, { size: 0.1 }, scene);
@@ -321,41 +332,20 @@ function createBall(tgt, owner) {
   ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
   ball.physicsImpostor.applyImpulse(owner.physicsImpostor.getLinearVelocity(), ball.getAbsolutePosition());
-  ball.physicsImpostor.applyImpulse(tgt.scale(BALL_SPEED), ball.getAbsolutePosition());
+  ball.physicsImpostor.applyImpulse(tgt.scale(speed), ball.getAbsolutePosition());
   owner.physicsImpostor.applyImpulse(tgt.scale(-1 * BALL_RECOIL), owner.getAbsolutePosition());
 
   ball.ttl = new Date().getTime() + BALL_TTL;
   balls.push(ball);
 
   ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
-  ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
+  if (ufo) {
+    ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
+  }
   ball.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onBallHitShip);
 
   return ball;
 }
-
-// function createUfoBall(tgt) {
-//   tgt.normalize();
-
-//   const ball = BABYLON.MeshBuilder.CreateBox('ball', { size: 0.1 }, scene);
-//   ball.position = tgt.scale(2).add(ufo.position);
-
-//   ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
-
-//   ball.physicsImpostor.applyImpulse(ufo.physicsImpostor.getLinearVelocity(), ball.getAbsolutePosition());
-//   ball.physicsImpostor.applyImpulse(tgt.scale(BALL_SPEED), ball.getAbsolutePosition());
-//   ufo.physicsImpostor.applyImpulse(tgt.scale(-1 * BALL_RECOIL), ufo.getAbsolutePosition());
-
-//   ball.ttl = new Date().getTime() + BALL_TTL;
-//   balls.push(ball);
-
-//   const fire = fx.createUfoBall(ball);
-//   ball.fire = fire;
-
-//   ball.physicsImpostor.registerOnPhysicsCollide(oids.map(w => w.physicsImpostor), onBallHitAsteroid);
-//   ball.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo);
-//   ball.physicsImpostor.registerOnPhysicsCollide(ship.physicsImpostor, onBallHitShip);
-// }
 
 function onBallHitAsteroid(me, other) {
   me.object.ttl = 0;
@@ -502,7 +492,7 @@ function fire() {
     0,
   );
 
-  const ball = createBall(tgt, ship);
+  const ball = createBall(tgt, ship, BALL_SPEED);
   ball.fire = fx.createShipBall(ball);
 
   overheat += 1;
