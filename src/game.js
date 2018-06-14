@@ -151,19 +151,18 @@ function createShip() {
   return ship;
 }
 
-function createUfo() {
+function createUfo(position) {
   const ufo = BABYLON.MeshBuilder.CreateSphere("ufo", {diameter: 2.5, diameterY: 1.2, segments: 6}, scene);
-
-  ufo.position.x = (Math.random() - 0.5) * MAX_X;
-  ufo.position.y = (Math.random() - 0.5) * MAX_Y;
+  ufo.position.x = position.x;
+  ufo.position.y = position.y;
 
   ufo.physicsImpostor = new BABYLON.PhysicsImpostor(ufo, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.1 }, scene);
 
   oids.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onAsteroidHitUfo));
   balls.map(oid => oid.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onBallHitUfo));
   ship.physicsImpostor.registerOnPhysicsCollide(ufo.physicsImpostor, onShipHitUfo);
-
   ufo.physicsImpostor.applyImpulse(new BABYLON.Vector3(3, 0, 0), ufo.getAbsolutePosition());
+
   return ufo;
 }
 
@@ -173,12 +172,31 @@ async function ufoAi() {
     // await sleep(15000 + Math.floor(Math.random() * 15000));
     await sleep(UFO_MIN_RESPAWN + Math.floor(Math.random() * (UFO_MAX_RESPAWN - UFO_MIN_RESPAWN)));
 
-    const theUfo = createUfo();
+    const position = new BABYLON.Vector3(
+      (Math.random() - 0.5) * MAX_X,
+      (Math.random() - 0.5) * MAX_Y,
+      0
+    );
+
+    fx.createTeleport(position);
+
+    //ufo.scaling.y = 0;
+
+    // var teleportAnimation = new BABYLON.Animation("teleport animation", "scaling.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    // teleportAnimation.setKeys(keys);
+
+    // ufo.animations.push(teleportAnimation);
+    // scene.beginAnimation(teleportAnimation, 0, 100, true);
+
+    // console.log('ufo');
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const theUfo = createUfo(position);
     ufo = theUfo;
     ufo.level = ufolevel;
 
-
-     console.log('level', ufolevel, ufo.level);
+    // ufo.scaling.x = 1;
 
     while (true) {
       await sleep(Math.floor(Math.random() * UFO_WAIT_TIME));

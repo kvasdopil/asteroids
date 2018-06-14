@@ -4,6 +4,40 @@ class Fx {
     this.scene = scene;
   }
 
+  createTeleport(target) {
+    const effect = new BABYLON.ParticleSystem("teleport", 2000, this.scene);
+    effect.particleTexture = this.flareTexture;
+
+    effect.color1 = new BABYLON.Color4(0.7, 1.0, 0.8, 1.0);
+    effect.color2 = new BABYLON.Color4(0.2, 1.0, 0.5, 1.0);
+    effect.colorDead = new BABYLON.Color4(0, 0.2, 0.0, 0.0);
+
+    // effect.color1 = new BABYLON.Color4(1.0, 1.0, 0.0, 1.0),
+    // effect.color1 = new BABYLON.Color4(1.0, 0.0, 0.5, 1.0),
+    // effect.colorDead = new BABYLON.Color4(0.2, 0.0, 0.0, 0.0),
+
+    effect.minSize = 0.1;
+    effect.maxSize = 0.5;
+    effect.minLifeTime = 0;
+    effect.maxLifeTime = 1;
+    effect.emitRate = 1000;
+    //effect.minEmitBox = new BABYLON.Vector3(-1, -1, -1);
+    //effect.maxEmitBox = new BABYLON.Vector3(1, 1, 1);
+    //effect.direction1 = new BABYLON.Vector3(0, 0, 1).normalize();
+    //effect.direction2 = new BABYLON.Vector3(0, 0, -1).normalize();
+    effect.createSphereEmitter(1.5);
+    effect.minEmitPower = 0;
+    effect.maxEmitPower = 0;
+    effect.updateSpeed = 0.005;
+
+    effect.emitter = target;
+
+    effect.targetStopDuration = .3;
+    effect.start();
+
+    return effect;
+  }
+
   createExhaust(target) {
     const exhaust = new BABYLON.ParticleSystem("exhaust", 2000, this.scene);
     exhaust.particleTexture = this.flareTexture;
