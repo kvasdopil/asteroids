@@ -211,8 +211,8 @@ async function ufoAi() {
         heading.normalize();
         ufo.physicsImpostor.applyImpulse(heading.scale(1), ufo.getAbsolutePosition());
       } else {
-        const ball_speed = BALL_SPEED / 2 + level*2;
-        const error = Math.max(0, 3 - level/3);
+        const ball_speed = BALL_SPEED / 2 + ufolevel*2;
+        const error = Math.max(0, 3 - ufolevel/3);
         const distance_in_sec = heading.length() / ball_speed;
 
         if (distance_in_sec < BALL_TTL / 1000) {
